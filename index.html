@@ -1,0 +1,777 @@
+<title>Membrane Watch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --page:#F4F7F8; --surface:#FFFFFF; --surface-2:#F9FBFC; --surface-raised:#FFFFFF;
+    --ink:#0E1B20; --ink-2:#46595F; --ink-muted:#7E9096;
+    --border:rgba(14,27,32,0.11); --grid:#E4EAEC;
+    --accent:#215F8F; --accent-strong:#134061; --accent-soft:rgba(33,95,143,0.10); --accent-soft-2:rgba(33,95,143,0.18);
+    --seq-1:#E6F0F6; --seq-2:#C3DDEC; --seq-3:#8FBFDC; --seq-4:#5497C4; --seq-5:#2A70A0; --seq-6:#134061;
+    --good:#0ca30c; --warning:#c98500; --serious:#c1552f; --critical:#b8322f;
+    --shadow: 0 1px 2px rgba(14,27,32,0.06), 0 8px 24px -12px rgba(14,27,32,0.16);
+    --radius:12px; --radius-sm:8px;
+    --font-ui:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page:#0A1315; --surface:#111C1F; --surface-2:#0D1719; --surface-raised:#142124;
+      --ink:#EAF1F2; --ink-2:#AFC0C4; --ink-muted:#728488;
+      --border:rgba(234,241,242,0.12); --grid:#233134;
+      --accent:#5FA2CE; --accent-strong:#8FC2E4; --accent-soft:rgba(95,162,206,0.14); --accent-soft-2:rgba(95,162,206,0.24);
+      --seq-1:#16262C; --seq-2:#1B3542; --seq-3:#224A5E; --seq-4:#2D6483; --seq-5:#3F84A9; --seq-6:#6FADD1;
+      --good:#3fc23f; --warning:#e0a531; --serious:#e08862; --critical:#e2665f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:#0A1315; --surface:#111C1F; --surface-2:#0D1719; --surface-raised:#142124;
+    --ink:#EAF1F2; --ink-2:#AFC0C4; --ink-muted:#728488;
+    --border:rgba(234,241,242,0.12); --grid:#233134;
+    --accent:#5FA2CE; --accent-strong:#8FC2E4; --accent-soft:rgba(95,162,206,0.14); --accent-soft-2:rgba(95,162,206,0.24);
+    --seq-1:#16262C; --seq-2:#1B3542; --seq-3:#224A5E; --seq-4:#2D6483; --seq-5:#3F84A9; --seq-6:#6FADD1;
+    --good:#3fc23f; --warning:#e0a531; --serious:#e08862; --critical:#e2665f;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--page); color:var(--ink); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
+  h1,h2,h3{ font-family:var(--font-ui); text-wrap:balance; margin:0; }
+  [hidden]{ display:none !important; }
+  button{ font-family:inherit; }
+  ::selection{ background:var(--accent-soft-2); }
+  .tnum{ font-variant-numeric: tabular-nums; }
+  .mono{ font-family:var(--font-mono); letter-spacing:-0.01em; }
+
+  /* ---------- Login ---------- */
+  #loginScreen{
+    min-height:100%; display:flex; align-items:center; justify-content:center;
+    padding: 48px 20px; position:relative; overflow:hidden;
+    background:
+      repeating-linear-gradient(115deg, transparent 0 26px, var(--border) 26px 27px),
+      radial-gradient(1200px 600px at 15% -10%, var(--accent-soft), transparent 60%),
+      var(--page);
+  }
+  .login-card{
+    width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; box-shadow:var(--shadow); padding:36px 32px 28px; position:relative; z-index:1;
+  }
+  .brand-mark{ display:flex; align-items:center; gap:10px; margin-bottom:26px; }
+  .brand-mark svg{ flex:none; }
+  .brand-mark .wordmark{ font-weight:800; font-size:1.05rem; letter-spacing:-0.01em; }
+  .brand-mark .tagline{ font-size:0.72rem; color:var(--ink-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+  .login-card h1{ font-size:1.32rem; font-weight:800; letter-spacing:-0.015em; margin-bottom:4px; }
+  .login-card p.sub{ color:var(--ink-2); font-size:0.87rem; margin:0 0 24px; line-height:1.5; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:0.74rem; font-weight:700; color:var(--ink-2); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
+  .field input{
+    width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink); font-size:0.92rem; font-family:var(--font-ui);
+  }
+  .field input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .login-error{
+    display:flex; gap:8px; align-items:flex-start; background:color-mix(in oklab, var(--critical) 12%, var(--surface));
+    color:var(--critical); border:1px solid color-mix(in oklab, var(--critical) 35%, transparent);
+    border-radius:var(--radius-sm); padding:9px 11px; font-size:0.82rem; margin-bottom:14px; font-weight:600;
+  }
+  .btn-primary{
+    width:100%; padding:11px; border-radius:var(--radius-sm); border:none; background:var(--accent-strong);
+    color:#fff; font-weight:700; font-size:0.92rem; cursor:pointer; margin-top:6px;
+  }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .demo-hint{
+    margin-top:18px; padding:10px 12px; background:var(--surface-2); border:1px dashed var(--border);
+    border-radius:var(--radius-sm); font-size:0.76rem; color:var(--ink-muted); line-height:1.55;
+  }
+  .demo-hint b{ color:var(--ink-2); font-family:var(--font-mono); font-weight:500; }
+
+  /* ---------- App shell ---------- */
+  #app{ min-height:100%; display:flex; flex-direction:column; }
+  header.topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px clamp(16px,3vw,32px); border-bottom:1px solid var(--border); background:var(--surface);
+    position:sticky; top: env(safe-area-inset-top, 0px); z-index:20; flex-wrap:wrap;
+  }
+  .topbar-right{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .vendor-chip{
+    display:flex; align-items:center; gap:7px; padding:6px 12px 6px 8px; border-radius:999px;
+    background:var(--surface-2); border:1px solid var(--border); font-size:0.8rem; font-weight:700;
+  }
+  .vendor-chip .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
+  .user-email{ font-size:0.78rem; color:var(--ink-muted); font-family:var(--font-mono); }
+  .btn-ghost{
+    padding:7px 13px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent;
+    color:var(--ink-2); font-size:0.8rem; font-weight:700; cursor:pointer;
+  }
+  .btn-ghost:hover{ background:var(--surface-2); color:var(--ink); }
+
+  .sample-banner{
+    display:flex; align-items:center; gap:9px; padding:9px clamp(16px,3vw,32px);
+    background:color-mix(in oklab, var(--warning) 12%, var(--surface)); border-bottom:1px solid var(--border);
+    font-size:0.79rem; color:var(--ink-2); font-weight:600;
+  }
+  .sample-banner .pip{ width:7px; height:7px; border-radius:50%; background:var(--warning); flex:none; }
+
+  .controls-row{
+    display:flex; align-items:flex-end; gap:20px; padding:18px clamp(16px,3vw,32px) 6px; flex-wrap:wrap;
+  }
+  .control{ display:flex; flex-direction:column; gap:6px; min-width:190px; }
+  .control label{ font-size:0.72rem; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.05em; }
+  select.pill-select{
+    padding:8px 34px 8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface);
+    color:var(--ink); font-size:0.87rem; font-weight:600; font-family:var(--font-ui); cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%237E9096' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center;
+  }
+  select.pill-select:disabled{ opacity:0.55; cursor:not-allowed; }
+  .soon{ font-size:0.66rem; font-weight:700; color:var(--ink-muted); background:var(--surface-2); border:1px solid var(--border); padding:1px 6px; border-radius:999px; margin-left:6px; text-transform:uppercase; letter-spacing:0.04em; }
+
+  nav.tabs{
+    display:flex; gap:4px; padding:14px clamp(16px,3vw,32px) 0; border-bottom:1px solid var(--border);
+    overflow-x:auto;
+  }
+  .tab-btn{
+    display:flex; align-items:center; gap:7px; padding:10px 15px; border:none; background:transparent;
+    color:var(--ink-muted); font-weight:700; font-size:0.84rem; cursor:pointer; border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  .tab-btn svg{ opacity:0.8; }
+  .tab-btn.active{ color:var(--accent-strong); border-bottom-color:var(--accent-strong); }
+  .tab-btn:hover:not(.active){ color:var(--ink-2); }
+
+  main{ flex:1; padding:22px clamp(16px,3vw,32px) 48px; display:flex; flex-direction:column; gap:20px; }
+  .panel{ display:flex; flex-direction:column; gap:18px; }
+
+  .panel-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .filters select, .filters input[type=text]{
+    padding:7px 30px 7px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface);
+    color:var(--ink); font-size:0.81rem; font-family:var(--font-ui); font-weight:600; cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%237E9096' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 10px center;
+  }
+  .filters input[type=text]{ background-image:none; padding:7px 10px; cursor:text; min-width:170px; }
+
+  .seg{ display:flex; border:1px solid var(--border); border-radius:999px; padding:2px; background:var(--surface-2); flex:none; }
+  .seg button{ border:none; background:transparent; padding:6px 14px; border-radius:999px; font-size:0.78rem; font-weight:700; color:var(--ink-muted); cursor:pointer; }
+  .seg button.active{ background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(14,27,32,0.12); }
+
+  .stat-row{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+  .stat-tile{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
+  .stat-tile .label{ font-size:0.72rem; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px; }
+  .stat-tile .value{ font-size:1.5rem; font-weight:800; letter-spacing:-0.02em; }
+  .stat-tile .value small{ font-size:0.95rem; font-weight:700; color:var(--ink-2); }
+  .stat-tile .foot{ font-size:0.76rem; color:var(--ink-2); margin-top:4px; }
+  .stat-tile .foot.flag{ color:var(--critical); font-weight:700; }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .card-head{ padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .card-head h2{ font-size:0.94rem; font-weight:800; letter-spacing:-0.005em; }
+  .card-head .hint{ font-size:0.76rem; color:var(--ink-muted); }
+  .table-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+  thead th{
+    text-align:right; padding:9px 14px; font-size:0.68rem; font-weight:800; color:var(--ink-muted);
+    text-transform:uppercase; letter-spacing:0.045em; border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  thead th:first-child, tbody td:first-child{ text-align:left; }
+  tbody td{ padding:9px 14px; border-bottom:1px solid var(--grid); text-align:right; white-space:nowrap; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover td{ background:var(--surface-2); }
+  td.rowlabel{ font-weight:700; color:var(--ink); }
+  td.metric{ font-family:var(--font-mono); font-weight:500; border-radius:6px; }
+  td.metric .cellwrap{ display:inline-block; padding:3px 8px; border-radius:6px; min-width:44px; }
+
+  .bar-chart{ display:flex; flex-direction:column; gap:10px; padding:16px 18px 18px; }
+  .bar-row{ display:grid; grid-template-columns:88px 1fr 64px; align-items:center; gap:10px; }
+  .bar-row .blabel{ font-size:0.78rem; font-weight:700; color:var(--ink-2); font-family:var(--font-mono); }
+  .bar-track{ height:10px; border-radius:5px; background:var(--surface-2); overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:5px; background:linear-gradient(90deg, var(--seq-4), var(--accent-strong)); }
+  .bar-row .bval{ font-size:0.79rem; font-weight:700; text-align:right; font-family:var(--font-mono); }
+
+  .badge{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:0.72rem; font-weight:700; border:1px solid transparent; }
+  .badge.soldto{ background:var(--surface-2); color:var(--ink-2); border-color:var(--border); font-family:var(--font-mono); font-weight:500; }
+  .badge.status::before{ content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .badge.st-good{ color:var(--good); background:color-mix(in oklab, var(--good) 14%, transparent); }
+  .badge.st-warn{ color:var(--warning); background:color-mix(in oklab, var(--warning) 16%, transparent); }
+  .badge.st-crit{ color:var(--critical); background:color-mix(in oklab, var(--critical) 14%, transparent); }
+
+  .video-btn{ border:1px solid var(--border); background:var(--surface-2); color:var(--ink-muted); border-radius:6px; padding:4px 9px; font-size:0.72rem; font-weight:700; cursor:default; display:inline-flex; align-items:center; gap:4px; }
+  .video-btn.has{ color:var(--accent-strong); border-color:color-mix(in oklab, var(--accent) 40%, var(--border)); cursor:pointer; }
+  .video-btn.has:hover{ background:var(--accent-soft); }
+
+  .legend-row{ display:flex; align-items:center; gap:14px; padding:0 18px 14px; flex-wrap:wrap; }
+  .legend-swatch{ display:flex; align-items:center; gap:12px; font-size:0.73rem; color:var(--ink-muted); font-weight:600; }
+  .legend-ramp{ display:flex; height:9px; width:96px; border-radius:5px; overflow:hidden; border:1px solid var(--border); }
+  .legend-ramp span{ flex:1; }
+
+  .rowcount{ font-size:0.78rem; color:var(--ink-muted); font-weight:600; }
+
+  footer.page-footer{ padding:18px clamp(16px,3vw,32px) 32px; font-size:0.74rem; color:var(--ink-muted); border-top:1px solid var(--border); }
+
+  @media (max-width: 640px){
+    .card-head{ flex-direction:column; align-items:flex-start; }
+    thead th, tbody td{ padding:8px 10px; }
+    .bar-row{ grid-template-columns:66px 1fr 50px; }
+  }
+</style>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="brand-mark">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="13.5" stroke="var(--accent-strong)" stroke-width="1.6"/>
+        <circle cx="15" cy="15" r="8.5" stroke="var(--accent)" stroke-width="1.6"/>
+        <circle cx="15" cy="15" r="3.4" fill="var(--accent-strong)"/>
+      </svg>
+      <div>
+        <div class="wordmark">Membrane&nbsp;Watch</div>
+        <div class="tagline">Vendor Field-Failure Portal</div>
+      </div>
+    </div>
+    <h1>Sign in</h1>
+    <p class="sub">Pilot access for spare-part manufacturers to review field-failure data on their own components.</p>
+    <div id="loginError" class="login-error" hidden>
+      <span>⚠</span><span id="loginErrorText">Incorrect email or password.</span>
+    </div>
+    <form id="loginForm" autocomplete="off">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" placeholder="you@vendor.com" value="dheerajbathla@urbancompany.com">
+      </div>
+      <div class="field">
+        <label for="loginPass">Password</label>
+        <input id="loginPass" type="password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-primary">Sign in to portal</button>
+    </form>
+    <div class="demo-hint">Pilot build — login is fixed for now.<br>Email <b>dheerajbathla@urbancompany.com</b> · Password <b>dheeraj@123</b></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="brand-mark">
+      <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="13.5" stroke="var(--accent-strong)" stroke-width="1.6"/>
+        <circle cx="15" cy="15" r="8.5" stroke="var(--accent)" stroke-width="1.6"/>
+        <circle cx="15" cy="15" r="3.4" fill="var(--accent-strong)"/>
+      </svg>
+      <div>
+        <div class="wordmark">Membrane Watch</div>
+        <div class="tagline">Vendor Field-Failure Portal</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="vendor-chip"><span class="dot"></span>Vontron · RO Membrane</div>
+      <span class="user-email" id="topbarEmail"></span>
+      <button class="btn-ghost" id="logoutBtn">Log out</button>
+    </div>
+  </header>
+
+  <div class="sample-banner"><span class="pip"></span>Showing illustrative sample data for the pilot flow — production feed (scan &amp; revisit data) not yet connected. Figures are not real defect rates.</div>
+
+  <div class="controls-row">
+    <div class="control">
+      <label for="defectType">Defect type</label>
+      <select id="defectType" class="pill-select">
+        <option value="spare">Spare defect</option>
+        <option value="nonspare" disabled>Non-spare defect</option>
+      </select>
+    </div>
+    <div class="control">
+      <label for="component">Component</label>
+      <select id="component" class="pill-select">
+        <option value="ro_membrane">RO Membrane</option>
+        <option value="pcb" disabled>PCB</option>
+        <option value="smps" disabled>SMPS</option>
+      </select>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="cohort"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Production Cohort</button>
+    <button class="tab-btn" data-tab="geo"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13.5s5-4.4 5-8.1a5 5 0 10-10 0c0 3.7 5 8.1 5 8.1z" stroke="currentColor" stroke-width="1.4"/><circle cx="7.5" cy="5.4" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>Geography</button>
+    <button class="tab-btn" data-tab="tds"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5s3.7 4.7 3.7 7.5a3.7 3.7 0 11-7.4 0c0-2.8 3.7-7.5 3.7-7.5z" stroke="currentColor" stroke-width="1.4"/></svg>Water Quality (TDS)</button>
+    <button class="tab-btn" data-tab="rows"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Row-Level Detail</button>
+  </nav>
+
+  <main>
+    <!-- FUNNEL 1: Production cohort -->
+    <section class="panel" data-panel="cohort">
+      <div class="stat-row" id="cohortStats"></div>
+      <div class="panel-toolbar">
+        <div class="filters">
+          <select id="cohortRange">
+            <option value="12">Last 12 months</option>
+            <option value="6">Last 6 months</option>
+            <option value="3">Last 3 months</option>
+          </select>
+        </div>
+        <div class="seg" data-seg="cohort"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">Percentage</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Defect rate by production month</h2>
+          <span class="hint">Tenure buckets measure days from spare invoice back to machine install date</span>
+        </div>
+        <div class="table-wrap">
+          <table id="cohortTable">
+            <thead><tr><th>Production month</th><th>Spares shipped</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch">Lower defect rate<div class="legend-ramp"><span style="background:var(--seq-1)"></span><span style="background:var(--seq-2)"></span><span style="background:var(--seq-3)"></span><span style="background:var(--seq-4)"></span><span style="background:var(--seq-5)"></span><span style="background:var(--seq-6)"></span></div>Higher defect rate</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FUNNEL 2: Geography -->
+    <section class="panel" data-panel="geo" hidden>
+      <div class="stat-row" id="geoStats"></div>
+      <div class="panel-toolbar">
+        <div class="filters">
+          <select id="geoPeriod">
+            <option value="all">All-time cohort</option>
+            <option value="12">Trailing 12 months</option>
+            <option value="6">Trailing 6 months</option>
+          </select>
+        </div>
+        <div class="seg" data-seg="geo"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">Percentage</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Defect rate by state</h2><span class="hint">Ranked by total spares shipped</span></div>
+        <div class="table-wrap">
+          <table id="geoTable">
+            <thead><tr><th>State</th><th>Spares shipped</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FUNNEL 3: TDS -->
+    <section class="panel" data-panel="tds" hidden>
+      <div class="stat-row" id="tdsStats"></div>
+      <div class="panel-toolbar">
+        <div class="filters">
+          <select id="tdsPeriod">
+            <option value="all">All-time cohort</option>
+            <option value="12">Trailing 12 months</option>
+          </select>
+        </div>
+        <div class="seg" data-seg="tds"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">Percentage</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>6–12 month defect rate by TDS band</h2><span class="hint">Higher influent TDS correlates with earlier membrane fouling</span></div>
+        <div class="bar-chart" id="tdsBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Defect rate by TDS band</h2></div>
+        <div class="table-wrap">
+          <table id="tdsTable">
+            <thead><tr><th>TDS range (ppm)</th><th>Machines</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FUNNEL 4: Row level -->
+    <section class="panel" data-panel="rows" hidden>
+      <div class="panel-toolbar">
+        <div class="filters">
+          <select id="fProdMonth"><option value="">Production month: all</option></select>
+          <select id="fInstallMonth"><option value="">Installation month: all</option></select>
+          <select id="fSoldTo"><option value="">Sold to: all</option></select>
+          <select id="fTds"><option value="">TDS range: all</option></select>
+        </div>
+        <span class="rowcount" id="rowCount"></span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Individual spare records</h2><span class="hint">Tenure = replacement-spare invoice date − machine installation date</span></div>
+        <div class="table-wrap">
+          <table id="rowsTable">
+            <thead><tr><th style="text-align:left">Spare barcode</th><th style="text-align:left">Production</th><th style="text-align:left">Installation</th><th style="text-align:left">Sold to</th><th>Tenure</th><th style="text-align:left">TDS range</th><th style="text-align:left">Video proof</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">Membrane Watch · pilot prototype · Vontron / RO Membrane · Urban Company — internal data model, illustrative figures only.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var DATA = {"months": ["2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"], "monthLabels": ["Sep-25", "Oct-25", "Nov-25", "Dec-25", "Jan-26", "Feb-26", "Mar-26", "Apr-26", "May-26", "Jun-26", "Jul-26", "Aug-26"], "cohort": [{"month": "2025-09", "label": "Sep-25", "spares": 655, "d1": 4, "d2": 9, "d3_6": 13, "d6_12": 20}, {"month": "2025-10", "label": "Oct-25", "spares": 679, "d1": 6, "d2": 10, "d3_6": 13, "d6_12": 24}, {"month": "2025-11", "label": "Nov-25", "spares": 732, "d1": 5, "d2": 8, "d3_6": 18, "d6_12": 27}, {"month": "2025-12", "label": "Dec-25", "spares": 834, "d1": 8, "d2": 11, "d3_6": 17, "d6_12": 32}, {"month": "2026-01", "label": "Jan-26", "spares": 847, "d1": 8, "d2": 9, "d3_6": 19, "d6_12": 28}, {"month": "2026-02", "label": "Feb-26", "spares": 918, "d1": 10, "d2": 10, "d3_6": 17, "d6_12": 27}, {"month": "2026-03", "label": "Mar-26", "spares": 985, "d1": 9, "d2": 14, "d3_6": 25, "d6_12": 37}, {"month": "2026-04", "label": "Apr-26", "spares": 1045, "d1": 7, "d2": 12, "d3_6": 25, "d6_12": 45}, {"month": "2026-05", "label": "May-26", "spares": 1102, "d1": 10, "d2": 15, "d3_6": 20, "d6_12": 35}, {"month": "2026-06", "label": "Jun-26", "spares": 1155, "d1": 13, "d2": 17, "d3_6": 31, "d6_12": 24}, {"month": "2026-07", "label": "Jul-26", "spares": 1224, "d1": 11, "d2": 14, "d3_6": 27, "d6_12": 22}, {"month": "2026-08", "label": "Aug-26", "spares": 1270, "d1": 12, "d2": 18, "d3_6": 24, "d6_12": 31}], "geo": [{"key": "city_delhi_v2", "state": "Delhi NCR", "spares": 2518, "d1": 23, "d2": 30, "d3_6": 64, "d6_12": 66}, {"key": "city_bangalore_v2", "state": "Karnataka (Bengaluru)", "spares": 2175, "d1": 25, "d2": 34, "d3_6": 49, "d6_12": 59}, {"key": "city_hyderabad_v2", "state": "Telangana (Hyderabad)", "spares": 1831, "d1": 19, "d2": 19, "d3_6": 55, "d6_12": 64}, {"key": "city_mumbai_v2", "state": "Maharashtra (Mumbai)", "spares": 1717, "d1": 14, "d2": 18, "d3_6": 53, "d6_12": 53}, {"key": "city_chennai_v2", "state": "Tamil Nadu (Chennai)", "spares": 1374, "d1": 14, "d2": 16, "d3_6": 36, "d6_12": 50}, {"key": "city_pune_v2", "state": "Maharashtra (Pune)", "spares": 1030, "d1": 10, "d2": 11, "d3_6": 22, "d6_12": 35}, {"key": "city_kolkata_v2", "state": "West Bengal (Kolkata)", "spares": 801, "d1": 7, "d2": 13, "d3_6": 20, "d6_12": 25}], "tds": [{"band": "100-200", "machines": 1145, "d1": 5, "d2": 7, "d3_6": 11, "d6_12": 16}, {"band": "200-500", "machines": 3205, "d1": 19, "d2": 32, "d3_6": 58, "d6_12": 77}, {"band": "500-1000", "machines": 3892, "d1": 35, "d2": 58, "d3_6": 101, "d6_12": 140}, {"band": "1000-2000", "machines": 2289, "d1": 32, "d2": 50, "d3_6": 87, "d6_12": 119}, {"band": "2000+", "machines": 916, "d1": 20, "d2": 31, "d3_6": 50, "d6_12": 68}], "rows": [{"barcode": "VTX-RM-2606-10143", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-06", "install_label": "Jun-26", "sold_to": "Amber", "tenure_days": 14, "tds_band": "100-200", "video": true}, {"barcode": "VTX-RM-2509-10222", "prod_month": "2025-09", "prod_label": "Sep-25", "install_month": "2025-11", "install_label": "Nov-25", "sold_to": "UC Direct", "tenure_days": 14, "tds_band": "2000+", "video": false}, {"barcode": "VTX-RM-2606-10349", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "Amber", "tenure_days": 14, "tds_band": "500-1000", "video": false}, {"barcode": "VTX-RM-2603-10192", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-04", "install_label": "Apr-26", "sold_to": "UC Direct", "tenure_days": 22, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2608-10278", "prod_month": "2026-08", "prod_label": "Aug-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "Ronch", "tenure_days": 22, "tds_band": "100-200", "video": false}, {"barcode": "VTX-RM-2603-10406", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-03", "install_label": "Mar-26", "sold_to": "Amber", "tenure_days": 22, "tds_band": "200-500", "video": false}, {"barcode": "VTX-RM-2606-10498", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-06", "install_label": "Jun-26", "sold_to": "Ronch", "tenure_days": 22, "tds_band": "200-500", "video": false}, {"barcode": "VTX-RM-2511-10288", "prod_month": "2025-11", "prod_label": "Nov-25", "install_month": "2025-11", "install_label": "Nov-25", "sold_to": "Ronch", "tenure_days": 29, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2601-10392", "prod_month": "2026-01", "prod_label": "Jan-26", "install_month": "2026-01", "install_label": "Jan-26", "sold_to": "Amber", "tenure_days": 29, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2608-10208", "prod_month": "2026-08", "prod_label": "Aug-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "Ronch", "tenure_days": 38, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2604-10331", "prod_month": "2026-04", "prod_label": "Apr-26", "install_month": "2026-05", "install_label": "May-26", "sold_to": "Ronch", "tenure_days": 38, "tds_band": "100-200", "video": true}, {"barcode": "VTX-RM-2511-10361", "prod_month": "2025-11", "prod_label": "Nov-25", "install_month": "2025-11", "install_label": "Nov-25", "sold_to": "Amber", "tenure_days": 38, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2601-10449", "prod_month": "2026-01", "prod_label": "Jan-26", "install_month": "2026-01", "install_label": "Jan-26", "sold_to": "Ronch", "tenure_days": 38, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2603-10514", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-04", "install_label": "Apr-26", "sold_to": "Amber", "tenure_days": 38, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2606-10543", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-06", "install_label": "Jun-26", "sold_to": "Ronch", "tenure_days": 38, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2602-10006", "prod_month": "2026-02", "prod_label": "Feb-26", "install_month": "2026-02", "install_label": "Feb-26", "sold_to": "Ronch", "tenure_days": 45, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2510-10101", "prod_month": "2025-10", "prod_label": "Oct-25", "install_month": "2025-11", "install_label": "Nov-25", "sold_to": "Ronch", "tenure_days": 45, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2510-10402", "prod_month": "2025-10", "prod_label": "Oct-25", "install_month": "2025-10", "install_label": "Oct-25", "sold_to": "Amber", "tenure_days": 45, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2606-10430", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "Ronch", "tenure_days": 45, "tds_band": "2000+", "video": true}, {"barcode": "VTX-RM-2511-10021", "prod_month": "2025-11", "prod_label": "Nov-25", "install_month": "2026-01", "install_label": "Jan-26", "sold_to": "Ronch", "tenure_days": 58, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2603-10440", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-03", "install_label": "Mar-26", "sold_to": "Ronch", "tenure_days": 58, "tds_band": "1000-2000", "video": false}, {"barcode": "VTX-RM-2607-10060", "prod_month": "2026-07", "prod_label": "Jul-26", "install_month": "2026-07", "install_label": "Jul-26", "sold_to": "Amber", "tenure_days": 71, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2602-10314", "prod_month": "2026-02", "prod_label": "Feb-26", "install_month": "2026-02", "install_label": "Feb-26", "sold_to": "Ronch", "tenure_days": 71, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2509-10527", "prod_month": "2025-09", "prod_label": "Sep-25", "install_month": "2025-10", "install_label": "Oct-25", "sold_to": "Ronch", "tenure_days": 71, "tds_band": "200-500", "video": false}, {"barcode": "VTX-RM-2512-10090", "prod_month": "2025-12", "prod_label": "Dec-25", "install_month": "2025-12", "install_label": "Dec-25", "sold_to": "UC Direct", "tenure_days": 89, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2604-10139", "prod_month": "2026-04", "prod_label": "Apr-26", "install_month": "2026-04", "install_label": "Apr-26", "sold_to": "Ronch", "tenure_days": 89, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2602-10161", "prod_month": "2026-02", "prod_label": "Feb-26", "install_month": "2026-02", "install_label": "Feb-26", "sold_to": "Ronch", "tenure_days": 89, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2603-10307", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-03", "install_label": "Mar-26", "sold_to": "Ronch", "tenure_days": 89, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2602-10422", "prod_month": "2026-02", "prod_label": "Feb-26", "install_month": "2026-02", "install_label": "Feb-26", "sold_to": "Ronch", "tenure_days": 89, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2606-10027", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-07", "install_label": "Jul-26", "sold_to": "Amber", "tenure_days": 110, "tds_band": "2000+", "video": true}, {"barcode": "VTX-RM-2607-10035", "prod_month": "2026-07", "prod_label": "Jul-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "Ronch", "tenure_days": 110, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2604-10041", "prod_month": "2026-04", "prod_label": "Apr-26", "install_month": "2026-04", "install_label": "Apr-26", "sold_to": "Amber", "tenure_days": 110, "tds_band": "2000+", "video": true}, {"barcode": "VTX-RM-2509-10255", "prod_month": "2025-09", "prod_label": "Sep-25", "install_month": "2025-10", "install_label": "Oct-25", "sold_to": "Amber", "tenure_days": 110, "tds_band": "2000+", "video": true}, {"barcode": "VTX-RM-2511-10395", "prod_month": "2025-11", "prod_label": "Nov-25", "install_month": "2026-01", "install_label": "Jan-26", "sold_to": "Ronch", "tenure_days": 110, "tds_band": "200-500", "video": false}, {"barcode": "VTX-RM-2603-10477", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-03", "install_label": "Mar-26", "sold_to": "UC Direct", "tenure_days": 110, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2511-10259", "prod_month": "2025-11", "prod_label": "Nov-25", "install_month": "2025-11", "install_label": "Nov-25", "sold_to": "Ronch", "tenure_days": 135, "tds_band": "200-500", "video": false}, {"barcode": "VTX-RM-2607-10317", "prod_month": "2026-07", "prod_label": "Jul-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "UC Direct", "tenure_days": 135, "tds_band": "500-1000", "video": false}, {"barcode": "VTX-RM-2604-10458", "prod_month": "2026-04", "prod_label": "Apr-26", "install_month": "2026-04", "install_label": "Apr-26", "sold_to": "Amber", "tenure_days": 135, "tds_band": "1000-2000", "video": true}, {"barcode": "VTX-RM-2602-10558", "prod_month": "2026-02", "prod_label": "Feb-26", "install_month": "2026-03", "install_label": "Mar-26", "sold_to": "Ronch", "tenure_days": 135, "tds_band": "500-1000", "video": false}, {"barcode": "VTX-RM-2509-10072", "prod_month": "2025-09", "prod_label": "Sep-25", "install_month": "2025-10", "install_label": "Oct-25", "sold_to": "Ronch", "tenure_days": 162, "tds_band": "500-1000", "video": true}, {"barcode": "VTX-RM-2606-10379", "prod_month": "2026-06", "prod_label": "Jun-26", "install_month": "2026-06", "install_label": "Jun-26", "sold_to": "Amber", "tenure_days": 162, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2603-10485", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-05", "install_label": "May-26", "sold_to": "Ronch", "tenure_days": 162, "tds_band": "2000+", "video": false}, {"barcode": "VTX-RM-2510-10343", "prod_month": "2025-10", "prod_label": "Oct-25", "install_month": "2025-10", "install_label": "Oct-25", "sold_to": "Ronch", "tenure_days": 190, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2608-10129", "prod_month": "2026-08", "prod_label": "Aug-26", "install_month": "2026-08", "install_label": "Aug-26", "sold_to": "Amber", "tenure_days": 225, "tds_band": "2000+", "video": true}, {"barcode": "VTX-RM-2605-10110", "prod_month": "2026-05", "prod_label": "May-26", "install_month": "2026-06", "install_label": "Jun-26", "sold_to": "UC Direct", "tenure_days": 260, "tds_band": "2000+", "video": false}, {"barcode": "VTX-RM-2512-10177", "prod_month": "2025-12", "prod_label": "Dec-25", "install_month": "2026-01", "install_label": "Jan-26", "sold_to": "Ronch", "tenure_days": 260, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2511-10214", "prod_month": "2025-11", "prod_label": "Nov-25", "install_month": "2025-11", "install_label": "Nov-25", "sold_to": "UC Direct", "tenure_days": 310, "tds_band": "200-500", "video": true}, {"barcode": "VTX-RM-2603-10237", "prod_month": "2026-03", "prod_label": "Mar-26", "install_month": "2026-04", "install_label": "Apr-26", "sold_to": "Ronch", "tenure_days": 350, "tds_band": "200-500", "video": true}], "totalSpares": 11446};
+
+  var CREDS = { email: "dheerajbathla@urbancompany.com", pass: "dheeraj@123" };
+
+  // ---------- Login ----------
+  var loginScreen = document.getElementById('loginScreen');
+  var appEl = document.getElementById('app');
+  var loginForm = document.getElementById('loginForm');
+  var loginError = document.getElementById('loginError');
+
+  function trySession(){
+    try{
+      return sessionStorage.getItem('mw_logged_in') === '1';
+    }catch(e){ return false; }
+  }
+  function setSession(v){
+    try{ sessionStorage.setItem('mw_logged_in', v ? '1' : '0'); }catch(e){}
+  }
+
+  function enterApp(email){
+    loginScreen.hidden = true;
+    appEl.hidden = false;
+    document.getElementById('topbarEmail').textContent = email || CREDS.email;
+    initDashboard();
+  }
+
+  loginForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    var pass = document.getElementById('loginPass').value;
+    if(email === CREDS.email && pass === CREDS.pass){
+      loginError.hidden = true;
+      setSession(true);
+      enterApp(email);
+    }else{
+      loginError.hidden = false;
+      document.getElementById('loginErrorText').textContent = 'Incorrect email or password. This pilot only accepts the demo credentials shown below.';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    setSession(false);
+    appEl.hidden = true;
+    loginScreen.hidden = false;
+    document.getElementById('loginPass').value = '';
+  });
+
+  if(trySession()){ enterApp(CREDS.email); }
+
+  // ---------- Tabs ----------
+  var tabButtons = document.querySelectorAll('.tab-btn');
+  tabButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var target = btn.getAttribute('data-tab');
+      document.querySelectorAll('.panel').forEach(function(p){
+        p.hidden = p.getAttribute('data-panel') !== target;
+      });
+    });
+  });
+
+  // ---------- Helpers ----------
+  function pct(n, d){ return d > 0 ? (n / d * 100) : 0; }
+  function fmt1(n){ return n.toFixed(1); }
+  function fmtInt(n){ return n.toLocaleString('en-IN'); }
+
+  function seqStep(t){
+    // t in [0,1] -> css var name
+    var steps = ['seq-1','seq-2','seq-3','seq-4','seq-5','seq-6'];
+    var idx = Math.min(steps.length - 1, Math.floor(t * steps.length));
+    return 'var(--' + steps[idx] + ')';
+  }
+
+  function metricCell(count, denom, mode, maxRate){
+    var value = mode === 'pct' ? pct(count, denom) : count;
+    var rate = pct(count, denom); // always shade by rate, regardless of display mode
+    var t = maxRate > 0 ? Math.min(1, rate / maxRate) : 0;
+    var display = mode === 'pct' ? fmt1(rate) + '%' : fmtInt(count);
+    var td = document.createElement('td');
+    td.className = 'metric tnum';
+    var span = document.createElement('span');
+    span.className = 'cellwrap';
+    span.style.background = seqStep(t);
+    span.textContent = display;
+    td.appendChild(span);
+    td.title = fmtInt(count) + ' of ' + fmtInt(denom) + ' (' + fmt1(rate) + '%)';
+    return td;
+  }
+
+  function maxRateAcross(rows, denomKey, keys){
+    var max = 0;
+    rows.forEach(function(r){
+      keys.forEach(function(k){
+        var rate = pct(r[k], r[denomKey]);
+        if(rate > max) max = rate;
+      });
+    });
+    return max || 1;
+  }
+
+  // ---------- Segmented controls ----------
+  var modeState = { cohort:'abs', geo:'abs', tds:'abs' };
+  document.querySelectorAll('.seg').forEach(function(seg){
+    var key = seg.getAttribute('data-seg');
+    seg.querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        seg.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        modeState[key] = btn.getAttribute('data-mode');
+        renderAll();
+      });
+    });
+  });
+
+  // ---------- Render: Cohort ----------
+  function renderCohort(){
+    var range = parseInt(document.getElementById('cohortRange').value, 10);
+    var rows = DATA.cohort.slice(-range);
+    var mode = modeState.cohort;
+    var maxRate = maxRateAcross(rows, 'spares', ['d1','d2','d3_6','d6_12']);
+
+    var tbody = document.querySelector('#cohortTable tbody');
+    tbody.innerHTML = '';
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.className = 'rowlabel';
+      tdLabel.textContent = r.label;
+      tr.appendChild(tdLabel);
+      var tdSpares = document.createElement('td');
+      tdSpares.className = 'tnum';
+      tdSpares.textContent = fmtInt(r.spares);
+      tr.appendChild(tdSpares);
+      tr.appendChild(metricCell(r.d1, r.spares, mode, maxRate));
+      tr.appendChild(metricCell(r.d2, r.spares, mode, maxRate));
+      tr.appendChild(metricCell(r.d3_6, r.spares, mode, maxRate));
+      tr.appendChild(metricCell(r.d6_12, r.spares, mode, maxRate));
+      tbody.appendChild(tr);
+    });
+
+    var totalSpares = rows.reduce(function(a,r){ return a + r.spares; }, 0);
+    var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
+    var worst = rows.slice().sort(function(a,b){ return pct(b.d6_12,b.spares) - pct(a.d6_12,a.spares); })[0];
+    var stats = document.getElementById('cohortStats');
+    stats.innerHTML = '';
+    stats.appendChild(statTile('Spares in view', fmtInt(totalSpares), rows.length + ' production months'));
+    stats.appendChild(statTile('Blended 6–12m rate', fmt1(pct(total6_12,totalSpares)) + '%', 'across cohorts shown'));
+    if(worst){
+      stats.appendChild(statTile('Highest-risk cohort', worst.label, fmt1(pct(worst.d6_12,worst.spares)) + '% at 6–12m', true));
+    }
+  }
+
+  // ---------- Render: Geography ----------
+  function renderGeo(){
+    var mode = modeState.geo;
+    var rows = DATA.geo.slice().sort(function(a,b){ return b.spares - a.spares; });
+    var maxRate = maxRateAcross(rows, 'spares', ['d1','d2','d3_6','d6_12']);
+
+    var tbody = document.querySelector('#geoTable tbody');
+    tbody.innerHTML = '';
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.className = 'rowlabel';
+      tdLabel.textContent = r.state;
+      tr.appendChild(tdLabel);
+      var tdSpares = document.createElement('td');
+      tdSpares.className = 'tnum';
+      tdSpares.textContent = fmtInt(r.spares);
+      tr.appendChild(tdSpares);
+      tr.appendChild(metricCell(r.d1, r.spares, mode, maxRate));
+      tr.appendChild(metricCell(r.d2, r.spares, mode, maxRate));
+      tr.appendChild(metricCell(r.d3_6, r.spares, mode, maxRate));
+      tr.appendChild(metricCell(r.d6_12, r.spares, mode, maxRate));
+      tbody.appendChild(tr);
+    });
+
+    var totalSpares = rows.reduce(function(a,r){ return a + r.spares; }, 0);
+    var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
+    var worst = rows.slice().sort(function(a,b){ return pct(b.d6_12,b.spares) - pct(a.d6_12,a.spares); })[0];
+    var stats = document.getElementById('geoStats');
+    stats.innerHTML = '';
+    stats.appendChild(statTile('States covered', String(rows.length), fmtInt(totalSpares) + ' spares total'));
+    stats.appendChild(statTile('Blended 6–12m rate', fmt1(pct(total6_12,totalSpares)) + '%', 'national average'));
+    if(worst){
+      stats.appendChild(statTile('Highest-risk state', worst.state, fmt1(pct(worst.d6_12,worst.spares)) + '% at 6–12m', true));
+    }
+  }
+
+  // ---------- Render: TDS ----------
+  function renderTds(){
+    var mode = modeState.tds;
+    var rows = DATA.tds;
+    var maxRate = maxRateAcross(rows, 'machines', ['d1','d2','d3_6','d6_12']);
+
+    var tbody = document.querySelector('#tdsTable tbody');
+    tbody.innerHTML = '';
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.className = 'rowlabel';
+      tdLabel.textContent = r.band;
+      tr.appendChild(tdLabel);
+      var tdM = document.createElement('td');
+      tdM.className = 'tnum';
+      tdM.textContent = fmtInt(r.machines);
+      tr.appendChild(tdM);
+      tr.appendChild(metricCell(r.d1, r.machines, mode, maxRate));
+      tr.appendChild(metricCell(r.d2, r.machines, mode, maxRate));
+      tr.appendChild(metricCell(r.d3_6, r.machines, mode, maxRate));
+      tr.appendChild(metricCell(r.d6_12, r.machines, mode, maxRate));
+      tbody.appendChild(tr);
+    });
+
+    // bar chart: 6-12m rate by band
+    var barWrap = document.getElementById('tdsBars');
+    barWrap.innerHTML = '';
+    var maxBarRate = Math.max.apply(null, rows.map(function(r){ return pct(r.d6_12, r.machines); }));
+    rows.forEach(function(r){
+      var rate = pct(r.d6_12, r.machines);
+      var row = document.createElement('div');
+      row.className = 'bar-row';
+      var label = document.createElement('div');
+      label.className = 'blabel';
+      label.textContent = r.band;
+      var track = document.createElement('div');
+      track.className = 'bar-track';
+      var fill = document.createElement('div');
+      fill.className = 'bar-fill';
+      fill.style.width = (maxBarRate > 0 ? (rate / maxBarRate * 100) : 0) + '%';
+      track.appendChild(fill);
+      var val = document.createElement('div');
+      val.className = 'bval';
+      val.textContent = fmt1(rate) + '%';
+      row.appendChild(label); row.appendChild(track); row.appendChild(val);
+      barWrap.appendChild(row);
+    });
+
+    var lowBand = rows[0], highBand = rows[rows.length-1];
+    var lowRate = pct(lowBand.d6_12, lowBand.machines);
+    var highRate = pct(highBand.d6_12, highBand.machines);
+    var multiple = lowRate > 0 ? (highRate / lowRate) : 0;
+    var totalM = rows.reduce(function(a,r){ return a + r.machines; }, 0);
+    var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
+    var stats = document.getElementById('tdsStats');
+    stats.innerHTML = '';
+    stats.appendChild(statTile('Machines in view', fmtInt(totalM), '5 TDS bands'));
+    stats.appendChild(statTile('Blended 6–12m rate', fmt1(pct(total6_12,totalM)) + '%', 'across all bands'));
+    stats.appendChild(statTile('High vs low TDS', multiple.toFixed(1) + '×', highBand.band + ' ppm vs ' + lowBand.band + ' ppm', true));
+  }
+
+  function statTile(label, value, foot, flag){
+    var el = document.createElement('div');
+    el.className = 'stat-tile';
+    var l = document.createElement('div'); l.className = 'label'; l.textContent = label;
+    var v = document.createElement('div'); v.className = 'value tnum'; v.textContent = value;
+    var f = document.createElement('div'); f.className = 'foot' + (flag ? ' flag' : ''); f.textContent = foot;
+    el.appendChild(l); el.appendChild(v); el.appendChild(f);
+    return el;
+  }
+
+  // ---------- Render: Row-level ----------
+  var filterState = { prod:'', install:'', soldTo:'', tds:'' };
+
+  function populateFilterOptions(){
+    var prodSel = document.getElementById('fProdMonth');
+    var installSel = document.getElementById('fInstallMonth');
+    var soldSel = document.getElementById('fSoldTo');
+    var tdsSel = document.getElementById('fTds');
+
+    DATA.months.forEach(function(m, i){
+      var o1 = document.createElement('option'); o1.value = m; o1.textContent = DATA.monthLabels[i];
+      prodSel.appendChild(o1);
+      var o2 = document.createElement('option'); o2.value = m; o2.textContent = DATA.monthLabels[i];
+      installSel.appendChild(o2);
+    });
+    ['Ronch','Amber','UC Direct'].forEach(function(s){
+      var o = document.createElement('option'); o.value = s; o.textContent = s; soldSel.appendChild(o);
+    });
+    DATA.tds.forEach(function(t){
+      var o = document.createElement('option'); o.value = t.band; o.textContent = t.band + ' ppm'; tdsSel.appendChild(o);
+    });
+
+    prodSel.addEventListener('change', function(){ filterState.prod = prodSel.value; renderRows(); });
+    installSel.addEventListener('change', function(){ filterState.install = installSel.value; renderRows(); });
+    soldSel.addEventListener('change', function(){ filterState.soldTo = soldSel.value; renderRows(); });
+    tdsSel.addEventListener('change', function(){ filterState.tds = tdsSel.value; renderRows(); });
+  }
+
+  function tenureBadge(days){
+    if(days <= 60) return {cls:'st-crit', label:'Early-life'};
+    if(days <= 180) return {cls:'st-warn', label:'Mid-life'};
+    return {cls:'st-good', label:'Late-life'};
+  }
+
+  function renderRows(){
+    var rows = DATA.rows.filter(function(r){
+      if(filterState.prod && r.prod_month !== filterState.prod) return false;
+      if(filterState.install && r.install_month !== filterState.install) return false;
+      if(filterState.soldTo && r.sold_to !== filterState.soldTo) return false;
+      if(filterState.tds && r.tds_band !== filterState.tds) return false;
+      return true;
+    });
+
+    var tbody = document.querySelector('#rowsTable tbody');
+    tbody.innerHTML = '';
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+
+      var tdB = document.createElement('td'); tdB.className='mono'; tdB.style.textAlign='left'; tdB.textContent = r.barcode; tr.appendChild(tdB);
+      var tdP = document.createElement('td'); tdP.style.textAlign='left'; tdP.textContent = r.prod_label; tr.appendChild(tdP);
+      var tdI = document.createElement('td'); tdI.style.textAlign='left'; tdI.textContent = r.install_label; tr.appendChild(tdI);
+
+      var tdS = document.createElement('td'); tdS.style.textAlign='left';
+      var badge = document.createElement('span'); badge.className='badge soldto'; badge.textContent = r.sold_to;
+      tdS.appendChild(badge); tr.appendChild(tdS);
+
+      var tdT = document.createElement('td'); tdT.className='tnum';
+      var tb = tenureBadge(r.tenure_days);
+      var wrap = document.createElement('span'); wrap.style.display='inline-flex'; wrap.style.alignItems='center'; wrap.style.gap='7px'; wrap.style.justifyContent='flex-end';
+      var bd = document.createElement('span'); bd.className = 'badge status ' + tb.cls; bd.textContent = tb.label;
+      var num = document.createElement('span'); num.className='mono'; num.textContent = r.tenure_days + 'd';
+      wrap.appendChild(bd); wrap.appendChild(num);
+      tdT.appendChild(wrap); tr.appendChild(tdT);
+
+      var tdD = document.createElement('td'); tdD.style.textAlign='left'; tdD.className='mono'; tdD.textContent = r.tds_band + ' ppm'; tr.appendChild(tdD);
+
+      var tdV = document.createElement('td'); tdV.style.textAlign='left';
+      var vbtn = document.createElement('span');
+      vbtn.className = 'video-btn' + (r.video ? ' has' : '');
+      vbtn.textContent = r.video ? '▶ View clip' : '— none';
+      vbtn.title = r.video ? 'Sample record — no real video attached in this prototype' : 'No video proof on file';
+      tdV.appendChild(vbtn); tr.appendChild(tdV);
+
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('rowCount').textContent = 'Showing ' + rows.length + ' of ' + DATA.rows.length + ' records';
+  }
+
+  function renderAll(){
+    renderCohort();
+    renderGeo();
+    renderTds();
+    renderRows();
+  }
+
+  document.getElementById('cohortRange').addEventListener('change', renderCohort);
+  document.getElementById('geoPeriod').addEventListener('change', renderGeo);
+  document.getElementById('tdsPeriod').addEventListener('change', renderTds);
+
+  var initialized = false;
+  function initDashboard(){
+    if(initialized) return;
+    initialized = true;
+    populateFilterOptions();
+    renderAll();
+  }
+})();
+</script>
