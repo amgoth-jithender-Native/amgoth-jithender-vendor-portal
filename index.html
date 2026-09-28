@@ -461,8 +461,6 @@
     document.getElementById('loginPass').value = '';
   });
 
-  if(trySession()){ enterApp(CREDS.email); }
-
   // ---------- Tabs ----------
   var tabButtons = document.querySelectorAll('.tab-btn');
   tabButtons.forEach(function(btn){
@@ -773,5 +771,8 @@
     populateFilterOptions();
     renderAll();
   }
+
+  // Restore session last, once all state above is initialized
+  if(trySession()){ enterApp(CREDS.email); }
 })();
 </script>
