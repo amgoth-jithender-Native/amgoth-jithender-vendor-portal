@@ -200,6 +200,12 @@
   }
   thead th:first-child, tbody td:first-child{ text-align:left; }
   tbody td{ padding:9px 14px; border-bottom:1px solid var(--grid); text-align:right; white-space:nowrap; }
+  tfoot td{
+    padding:10px 14px; text-align:right; white-space:nowrap; font-weight:700; color:var(--ink);
+    background:var(--surface-2); border-top:2px solid var(--border);
+  }
+  tfoot td:first-child{ text-align:left; text-transform:uppercase; letter-spacing:0.04em; font-size:0.76rem; }
+  tfoot td.metric .cellwrap{ font-weight:800; }
   tbody tr:last-child td{ border-bottom:none; }
   tbody tr:hover td{ background:var(--surface-2); }
   td.rowlabel{ font-weight:700; color:var(--ink); }
@@ -253,7 +259,7 @@
 
   @media (max-width: 640px){
     .card-head{ flex-direction:column; align-items:flex-start; }
-    thead th, tbody td{ padding:8px 10px; }
+    thead th, tbody td, tfoot td{ padding:8px 10px; }
     .bar-row{ grid-template-columns:66px 1fr 50px; }
   }
 </style>
@@ -383,7 +389,7 @@
         <div class="table-wrap">
           <table id="cohortTable">
             <thead><tr><th>Production month</th><th>Spares shipped</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
-            <tbody></tbody>
+            <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
         <div class="legend-row">
@@ -411,7 +417,7 @@
         <div class="table-wrap">
           <table id="geoTable">
             <thead><tr><th id="geoLabelHead">State</th><th>Spares shipped</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
-            <tbody></tbody>
+            <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
       </div>
@@ -449,7 +455,7 @@
         <div class="table-wrap">
           <table id="tdsTable">
             <thead><tr><th>TDS range (ppm)</th><th>Machines</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
-            <tbody></tbody>
+            <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
       </div>
@@ -471,7 +477,7 @@
         <div class="table-wrap">
           <table id="rowsTable">
             <thead><tr><th style="text-align:left">Spare barcode</th><th style="text-align:left">Production</th><th style="text-align:left">Installation</th><th style="text-align:left">Sold to</th><th>Tenure</th><th style="text-align:left">TDS range</th><th style="text-align:left">Video proof</th></tr></thead>
-            <tbody></tbody>
+            <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
       </div>
@@ -727,6 +733,34 @@
     });
   });
 
+  // ---------- Overall row ----------
+  // Sums whatever rows are currently shown, so it always follows the active filters
+  function renderOverallRow(tableId, rows, denomKey, mode){
+    var tfoot = document.querySelector('#' + tableId + ' tfoot');
+    tfoot.innerHTML = '';
+    if(!rows.length) return;
+    var sum = { denom:0, d1:0, d2:0, d3_6:0, d6_12:0 };
+    rows.forEach(function(r){
+      sum.denom += r[denomKey];
+      sum.d1 += r.d1; sum.d2 += r.d2; sum.d3_6 += r.d3_6; sum.d6_12 += r.d6_12;
+    });
+    var tr = document.createElement('tr');
+    var tdLabel = document.createElement('td');
+    tdLabel.textContent = 'Overall';
+    tdLabel.title = 'Total of the ' + rows.length + ' rows shown';
+    tr.appendChild(tdLabel);
+    var tdDenom = document.createElement('td');
+    tdDenom.className = 'tnum';
+    tdDenom.textContent = fmtInt(sum.denom);
+    tr.appendChild(tdDenom);
+    ['d1','d2','d3_6','d6_12'].forEach(function(k){
+      var td = metricCell(sum[k], sum.denom, mode, 0);
+      td.querySelector('.cellwrap').style.background = 'transparent'; // totals aren't shaded against the rows
+      tr.appendChild(td);
+    });
+    tfoot.appendChild(tr);
+  }
+
   // ---------- Render: Cohort ----------
   function renderCohort(){
     var range = parseInt(document.getElementById('cohortRange').value, 10);
@@ -752,6 +786,7 @@
       tr.appendChild(metricCell(r.d6_12, r.spares, mode, maxRate));
       tbody.appendChild(tr);
     });
+    renderOverallRow('cohortTable', rows, 'spares', mode);
 
     var totalSpares = rows.reduce(function(a,r){ return a + r.spares; }, 0);
     var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
@@ -832,6 +867,7 @@
       tr.appendChild(metricCell(r.d6_12, r.spares, mode, maxRate));
       tbody.appendChild(tr);
     });
+    renderOverallRow('geoTable', rows, 'spares', mode);
 
     var totalSpares = rows.reduce(function(a,r){ return a + r.spares; }, 0);
     var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
@@ -899,6 +935,7 @@
       tr.appendChild(metricCell(r.d6_12, r.machines, mode, maxRate));
       tbody.appendChild(tr);
     });
+    renderOverallRow('tdsTable', rows, 'machines', mode);
 
     // Chart: selected windows stacked per band, scaled to the largest bar
     document.getElementById('tdsWindowHint').textContent = windowSummary(buckets);
@@ -1058,6 +1095,37 @@
     });
 
     document.getElementById('rowCount').textContent = 'Showing ' + rows.length + ' of ' + DATA.rows.length + ' records';
+    renderRowsOverall(rows);
+  }
+
+  function renderRowsOverall(rows){
+    var tfoot = document.querySelector('#rowsTable tfoot');
+    tfoot.innerHTML = '';
+    if(!rows.length) return;
+    var soldTo = {}, tenureSum = 0, withTds = 0, withVideo = 0;
+    rows.forEach(function(r){
+      soldTo[r.sold_to] = (soldTo[r.sold_to] || 0) + 1;
+      tenureSum += r.tenure_days;
+      if(r.tds_band) withTds++;
+      if(r.video) withVideo++;
+    });
+    var cells = [
+      ['Overall', 'left'],
+      [fmtInt(rows.length) + (rows.length === 1 ? ' record' : ' records'), 'left'],
+      ['', 'left'],
+      [Object.keys(soldTo).map(function(k){ return k + ' ' + fmtInt(soldTo[k]); }).join(' · '), 'left'],
+      ['Avg ' + Math.round(tenureSum / rows.length) + 'd', 'right'],
+      [fmtInt(withTds) + ' with TDS', 'left'],
+      [fmtInt(withVideo) + ' with video', 'left']
+    ];
+    var tr = document.createElement('tr');
+    cells.forEach(function(c){
+      var td = document.createElement('td');
+      td.textContent = c[0];
+      td.style.textAlign = c[1];
+      tr.appendChild(td);
+    });
+    tfoot.appendChild(tr);
   }
 
   function renderAll(){
