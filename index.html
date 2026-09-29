@@ -1,5 +1,6 @@
 <title>Membrane Watch</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>if(location.protocol==="file:")document.write('<script src="config.local.js"><\/script>')</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   :root{
@@ -461,6 +462,9 @@
   var linkParams = new URLSearchParams(window.location.hash.slice(1));
   var cameFromRecovery = linkParams.get('type') === 'recovery';
   var linkError = linkParams.get('error_description');
+  // Local copies have no injected key; fall back to the git-ignored config.local.js
+  if(SUPABASE_KEY.indexOf('PASTE_') === 0 && window.MW_SUPABASE_KEY) SUPABASE_KEY = window.MW_SUPABASE_KEY;
+  var keyMissing = SUPABASE_KEY.indexOf('PASTE_') === 0;
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // ---------- Login ----------
@@ -542,6 +546,10 @@
     e.preventDefault();
     var email = document.getElementById('loginEmail').value.trim().toLowerCase();
     var pass = document.getElementById('loginPass').value;
+    if(keyMissing){
+      showLoginError('This copy of the portal has no Supabase key. Use the live link, or add config.local.js for local testing.');
+      return;
+    }
     loginBtn.disabled = true;
     loginBtn.textContent = 'Signing in…';
     sb.auth.signInWithPassword({ email: email, password: pass })
