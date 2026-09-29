@@ -13,15 +13,26 @@ hardcoded demo credential with no real backend; the numbers on every tab are
 computed from an actual join of UC's install/defect data against the
 manufacturing scan data, not mock figures.
 
-- 185,954 Ronch RO installs, 15 Sep 2025 – 15 Sep 2026
-- 940 confirmed RO Membrane defects within the 365-day warranty (0.51%)
-- Spare's own production month traced for 73.4% of installs (136,456), via
-  the machine-barcode ↔ spare-barcode scan data
-- Input TDS captured for 8.3% of installs (15,459) — reflects real field data
+- 185,712 Ronch RO installs, 15 Sep 2025 – 15 Sep 2026 (corrected from an
+  earlier 185,954 — a join fan-out was duplicating 242 rows; fixed with a
+  `QUALIFY ROW_NUMBER()...=1` guard)
+- **1,044 total RO Membrane replacement events** across 968 distinct machines
+  (0.52% of installs had at least one) — this now counts **every** qualifying
+  replacement per machine within the 1-year warranty, not just the first
+- **Sold-to attribution**: a machine's first membrane replacement = **Ronch**
+  (the originally factory-assembled spare failed); any second/third
+  replacement on the same machine = **UC** (a repair-stock spare failed —
+  Vontron sells directly to UC as a separate channel from what it ships to
+  Ronch for assembly). 968 Ronch-attributed events, 76 UC-attributed
+- Spare's own production month traced for 73.1% of installs (135,815), via
+  the machine-barcode ↔ spare-barcode scan data — this only applies to a
+  machine's *first* replacement, since UC-channel repair spares are never
+  scanned into the assembly-line system
+- Input TDS captured for 8.3% of installs (15,454) — reflects real field data
   collection, not a query gap
-- 659 of the 940 defects trace to an identifiable spare barcode and appear in
-  the row-level tab; the other 281 are counted in the cohort/city/TDS totals
-  but have no traceable spare barcode, so aren't shown as individual records
+- 682 of the 1,044 events trace to an identifiable spare barcode and appear
+  in the row-level tab with that barcode; UC-attributed events show the
+  machine barcode instead (labeled, not fabricated as a spare barcode)
 - No video/photo evidence field exists in the source data — the row-level
   tab's video column is honestly empty for all real rows, not fabricated
 
@@ -30,7 +41,10 @@ Not yet in scope (would extend the same pipeline):
 - Geography is by **city**, not state — UC's warehouse has no state-level
   dimension
 - ~21% of RO Membrane invoice events warehouse-wide lack barcode
-  traceability, so the 940-defect figure is a floor, not a ceiling
+  traceability, so the defect figures above are a floor, not a ceiling
+- May 2026's production cohort has unusually low spare-barcode traceability
+  (12% vs 85-99% every other month) — likely a scanning gap in that batch's
+  workbook, not investigated further yet
 
 ## Running it
 
