@@ -85,6 +85,19 @@
     color:#fff; font-weight:700; font-size:0.92rem; cursor:pointer; margin-top:6px;
   }
   .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-primary:disabled{ opacity:0.6; cursor:default; filter:none; }
+  .field-aside{ display:flex; justify-content:flex-end; margin:-6px 0 10px; }
+  .link-btn{
+    background:none; border:none; padding:2px 0; font:inherit; font-size:0.8rem; font-weight:700;
+    color:var(--accent); cursor:pointer;
+  }
+  .link-btn:hover{ text-decoration:underline; }
+  .back-row{ text-align:center; margin-top:14px; }
+  .login-notice{
+    display:flex; gap:8px; align-items:flex-start; background:color-mix(in oklab, var(--good) 10%, var(--surface));
+    color:var(--ink); border:1px solid color-mix(in oklab, var(--good) 35%, transparent);
+    border-radius:var(--radius-sm); padding:9px 11px; font-size:0.82rem; margin-bottom:14px; font-weight:600; line-height:1.45;
+  }
   .role-chip{
     font-size:0.72rem; font-weight:700; letter-spacing:0.02em; padding:3px 9px; border-radius:999px;
     background:var(--accent-soft); color:var(--accent-strong);
@@ -236,10 +249,13 @@
         <div class="tagline">Vendor Field-Failure Portal</div>
       </div>
     </div>
-    <h1>Sign in</h1>
-    <p class="sub">Pilot access for spare-part manufacturers to review field-failure data on their own components.</p>
+    <h1 id="loginTitle">Sign in</h1>
+    <p class="sub" id="loginSub">Pilot access for spare-part manufacturers to review field-failure data on their own components.</p>
     <div id="loginError" class="login-error" hidden>
       <span>⚠</span><span id="loginErrorText">Incorrect email or password.</span>
+    </div>
+    <div id="loginNotice" class="login-notice" hidden>
+      <span>✓</span><span id="loginNoticeText"></span>
     </div>
     <form id="loginForm" autocomplete="off">
       <div class="field">
@@ -250,7 +266,27 @@
         <label for="loginPass">Password</label>
         <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" required>
       </div>
+      <div class="field-aside"><button type="button" class="link-btn" id="forgotLink">Forgot password?</button></div>
       <button type="submit" class="btn-primary" id="loginBtn">Sign in to portal</button>
+    </form>
+    <form id="forgotForm" hidden>
+      <div class="field">
+        <label for="forgotEmail">Email</label>
+        <input id="forgotEmail" type="email" placeholder="you@vendor.com" autocomplete="username" required>
+      </div>
+      <button type="submit" class="btn-primary" id="forgotBtn">Send reset link</button>
+      <div class="back-row"><button type="button" class="link-btn" id="backToLogin">Back to sign in</button></div>
+    </form>
+    <form id="resetForm" hidden>
+      <div class="field">
+        <label for="newPass">New password</label>
+        <input id="newPass" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="field">
+        <label for="newPass2">Confirm new password</label>
+        <input id="newPass2" type="password" placeholder="Repeat new password" autocomplete="new-password" minlength="8" required>
+      </div>
+      <button type="submit" class="btn-primary" id="resetBtn">Update password</button>
     </form>
   </div>
 </div>
@@ -421,6 +457,10 @@
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE"; // Project Settings -> API Keys -> publishable (anon) key
   var PORTAL_VENDOR = "vontron"; // vendor whose data this page carries
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
+  // Read the reset-email link's URL before the client consumes it
+  var linkParams = new URLSearchParams(window.location.hash.slice(1));
+  var cameFromRecovery = linkParams.get('type') === 'recovery';
+  var linkError = linkParams.get('error_description');
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // ---------- Login ----------
@@ -430,15 +470,45 @@
   var loginError = document.getElementById('loginError');
   var loginBtn = document.getElementById('loginBtn');
 
+  var forgotForm = document.getElementById('forgotForm');
+  var resetForm = document.getElementById('resetForm');
+  var loginNotice = document.getElementById('loginNotice');
+  var MODES = {
+    login:  { form: loginForm,  title: 'Sign in', sub: 'Pilot access for spare-part manufacturers to review field-failure data on their own components.' },
+    forgot: { form: forgotForm, title: 'Reset password', sub: 'Enter your account email and we will send you a link to set a new password.' },
+    reset:  { form: resetForm,  title: 'Set a new password', sub: 'Choose a new password for your account.' }
+  };
+
   function showLoginError(msg){
+    loginNotice.hidden = true;
     loginError.hidden = false;
     document.getElementById('loginErrorText').textContent = msg;
+  }
+  function showNotice(msg){
+    loginError.hidden = true;
+    loginNotice.hidden = false;
+    document.getElementById('loginNoticeText').textContent = msg;
+  }
+
+  function setMode(mode){
+    Object.keys(MODES).forEach(function(k){ MODES[k].form.hidden = k !== mode; });
+    document.getElementById('loginTitle').textContent = MODES[mode].title;
+    document.getElementById('loginSub').textContent = MODES[mode].sub;
+    loginError.hidden = true;
+    loginNotice.hidden = true;
   }
 
   function showLogin(){
     appEl.hidden = true;
     loginScreen.hidden = false;
+    setMode('login');
     document.getElementById('loginPass').value = '';
+  }
+
+  function busy(btn, label){
+    btn.disabled = !!label;
+    if(label){ btn.dataset.idle = btn.dataset.idle || btn.textContent; btn.textContent = label; }
+    else if(btn.dataset.idle){ btn.textContent = btn.dataset.idle; }
   }
 
   // Returns null if the profile may view this portal, otherwise the reason it can't
@@ -492,6 +562,59 @@
 
   document.getElementById('logoutBtn').addEventListener('click', function(){
     sb.auth.signOut().then(showLogin, showLogin);
+  });
+
+  // ---------- Forgot / reset password ----------
+  document.getElementById('forgotLink').addEventListener('click', function(){
+    setMode('forgot');
+    document.getElementById('forgotEmail').value = document.getElementById('loginEmail').value;
+    document.getElementById('forgotEmail').focus();
+  });
+  document.getElementById('backToLogin').addEventListener('click', function(){ setMode('login'); });
+
+  forgotForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+    var btn = document.getElementById('forgotBtn');
+    busy(btn, 'Sending…');
+    sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname })
+      .then(function(res){
+        if(res.error) throw res.error;
+        setMode('login');
+        document.getElementById('loginEmail').value = email;
+        // Same message whether or not the account exists, so emails can't be probed
+        showNotice('If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.');
+      })
+      .catch(function(err){ showLoginError('Could not send the reset email: ' + ((err && err.message) || 'unknown error')); })
+      .then(function(){ busy(btn, null); });
+  });
+
+  resetForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var p1 = document.getElementById('newPass').value;
+    var p2 = document.getElementById('newPass2').value;
+    if(p1 !== p2){ showLoginError('The two passwords do not match.'); return; }
+    var btn = document.getElementById('resetBtn');
+    busy(btn, 'Updating…');
+    sb.auth.updateUser({ password: p1 })
+      .then(function(res){
+        if(res.error) throw res.error;
+        document.getElementById('newPass').value = '';
+        document.getElementById('newPass2').value = '';
+        return sb.auth.getSession().then(function(r){ return enterWithSession(r.data.session); });
+      })
+      .catch(function(err){ showLoginError('Could not update the password: ' + ((err && err.message) || 'unknown error')); })
+      .then(function(){ busy(btn, null); });
+  });
+
+  function showResetForm(){
+    appEl.hidden = true;
+    loginScreen.hidden = false;
+    setMode('reset');
+    history.replaceState(null, '', window.location.pathname);
+  }
+  sb.auth.onAuthStateChange(function(event){
+    if(event === 'PASSWORD_RECOVERY') showResetForm();
   });
 
   // ---------- Tabs ----------
@@ -807,7 +930,13 @@
 
   // Restore session last, once all state above is initialized
   sb.auth.getSession().then(function(res){
-    if(res.data && res.data.session) return enterWithSession(res.data.session);
+    var session = res.data && res.data.session;
+    if(cameFromRecovery && session) return showResetForm();
+    if(linkError){
+      history.replaceState(null, '', window.location.pathname);
+      return showLoginError('That reset link is invalid or has expired. Request a new one with "Forgot password?".');
+    }
+    if(session) return enterWithSession(session);
   }).catch(function(){ showLogin(); });
 })();
 </script>
