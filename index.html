@@ -10,6 +10,7 @@
     --border:rgba(14,27,32,0.11); --grid:#E4EAEC;
     --accent:#215F8F; --accent-strong:#134061; --accent-soft:rgba(33,95,143,0.10); --accent-soft-2:rgba(33,95,143,0.18);
     --seq-1:#E6F0F6; --seq-2:#C3DDEC; --seq-3:#8FBFDC; --seq-4:#5497C4; --seq-5:#2A70A0; --seq-6:#4E7EA0;
+    --bk-1:#134061; --bk-2:#2A70A0; --bk-3:#5497C4; --bk-4:#9CC6E0;
     --good:#0ca30c; --warning:#c98500; --serious:#c1552f; --critical:#b8322f;
     --shadow: 0 1px 2px rgba(14,27,32,0.06), 0 8px 24px -12px rgba(14,27,32,0.16);
     --radius:12px; --radius-sm:8px;
@@ -26,6 +27,7 @@
       --border:rgba(234,241,242,0.12); --grid:#233134;
       --accent:#5FA2CE; --accent-strong:#8FC2E4; --accent-soft:rgba(95,162,206,0.14); --accent-soft-2:rgba(95,162,206,0.24);
       --seq-1:#16262C; --seq-2:#1B3542; --seq-3:#224A5E; --seq-4:#2D6483; --seq-5:#3F84A9; --seq-6:#6FADD1;
+      --bk-1:#B5DAF2; --bk-2:#6FADD1; --bk-3:#3F84A9; --bk-4:#2D5F7D;
       --good:#3fc23f; --warning:#e0a531; --serious:#e08862; --critical:#e2665f;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
     }
@@ -37,6 +39,7 @@
     --border:rgba(234,241,242,0.12); --grid:#233134;
     --accent:#5FA2CE; --accent-strong:#8FC2E4; --accent-soft:rgba(95,162,206,0.14); --accent-soft-2:rgba(95,162,206,0.24);
     --seq-1:#16262C; --seq-2:#1B3542; --seq-3:#224A5E; --seq-4:#2D6483; --seq-5:#3F84A9; --seq-6:#6FADD1;
+      --bk-1:#B5DAF2; --bk-2:#6FADD1; --bk-3:#3F84A9; --bk-4:#2D5F7D;
     --good:#3fc23f; --warning:#e0a531; --serious:#e08862; --critical:#e2665f;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
   }
@@ -209,6 +212,24 @@
   .bar-track{ height:10px; border-radius:5px; background:var(--surface-2); overflow:hidden; }
   .bar-fill{ height:100%; border-radius:5px; background:linear-gradient(90deg, var(--seq-4), var(--accent-strong)); }
   .bar-row .bval{ font-size:0.79rem; font-weight:700; text-align:right; font-family:var(--font-mono); }
+  .chips{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .chips-label{ font-size:0.72rem; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.04em; margin-right:2px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); background:var(--surface-2);
+    border-radius:999px; padding:5px 11px; font:inherit; font-size:0.78rem; font-weight:700; color:var(--ink-muted); cursor:pointer;
+  }
+  .chip i{ width:9px; height:9px; border-radius:3px; opacity:0.3; }
+  .chip.active{ background:var(--surface); color:var(--ink); border-color:var(--accent-soft-2); box-shadow:0 1px 2px rgba(14,27,32,0.1); }
+  .chip.active i{ opacity:1; }
+  .stack-track{ display:flex; gap:2px; height:14px; border-radius:4px; background:var(--surface-2); overflow:hidden; }
+  .stack-track span{ height:100%; min-width:0; }
+  .stack-track span:last-child{ border-radius:0 4px 4px 0; }
+  .bar-row.small-n .blabel, .bar-row.small-n .bval{ color:var(--ink-muted); }
+  .bar-row .bval small{ display:block; font-size:0.66rem; font-weight:600; color:var(--ink-muted); }
+  .chart-legend{ display:flex; gap:14px; flex-wrap:wrap; padding:14px 18px 0; font-size:0.76rem; font-weight:600; color:var(--ink-2); }
+  .chart-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .chart-legend i{ width:10px; height:10px; border-radius:3px; }
+  .chart-note{ padding:0 18px 16px; font-size:0.76rem; color:var(--ink-muted); line-height:1.5; }
 
   .badge{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:0.72rem; font-weight:700; border:1px solid transparent; }
   .badge.soldto{ background:var(--surface-2); color:var(--ink-2); border-color:var(--border); font-family:var(--font-mono); font-weight:500; }
@@ -401,19 +422,30 @@
       <div class="stat-row" id="tdsStats"></div>
       <div class="panel-toolbar">
         <div class="filters">
-          <select id="tdsPeriod">
-            <option value="all">All-time cohort</option>
-            <option value="12">Trailing 12 months</option>
+          <div class="chips" id="tdsBuckets" role="group" aria-label="Defect window">
+            <span class="chips-label">Defect window</span>
+            <button class="chip active" data-bucket="d1" aria-pressed="true"><i style="background:var(--bk-1)"></i>1m</button>
+            <button class="chip active" data-bucket="d2" aria-pressed="true"><i style="background:var(--bk-2)"></i>2m</button>
+            <button class="chip active" data-bucket="d3_6" aria-pressed="true"><i style="background:var(--bk-3)"></i>3–6m</button>
+            <button class="chip active" data-bucket="d6_12" aria-pressed="true"><i style="background:var(--bk-4)"></i>6–12m</button>
+          </div>
+          <select id="tdsMin" aria-label="Minimum machines per band">
+            <option value="0">All TDS bands</option>
+            <option value="100">Bands with 100+ machines</option>
+            <option value="500">Bands with 500+ machines</option>
+            <option value="1000">Bands with 1,000+ machines</option>
           </select>
         </div>
         <div class="seg" data-seg="tds"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">Percentage</button></div>
       </div>
       <div class="card">
-        <div class="card-head"><h2>6–12 month defect rate by TDS band</h2><span class="hint">Higher influent TDS correlates with earlier membrane fouling</span></div>
+        <div class="card-head"><h2>Defect rate by TDS band</h2><span class="hint" id="tdsWindowHint">All windows, 0–12 months</span></div>
+        <div class="chart-legend" id="tdsLegend"></div>
         <div class="bar-chart" id="tdsBars"></div>
+        <div class="chart-note" id="tdsNote"></div>
       </div>
       <div class="card">
-        <div class="card-head"><h2>Defect rate by TDS band</h2></div>
+        <div class="card-head"><h2>Breakdown by defect window</h2><span class="hint">All four windows, for the bands shown</span></div>
         <div class="table-wrap">
           <table id="tdsTable">
             <thead><tr><th>TDS range (ppm)</th><th>Machines</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
@@ -814,11 +846,41 @@
   }
 
   // ---------- Render: TDS ----------
+  var TDS_BUCKETS = [
+    { key:'d1',    label:'1m',    color:'var(--bk-1)' },
+    { key:'d2',    label:'2m',    color:'var(--bk-2)' },
+    { key:'d3_6',  label:'3–6m',  color:'var(--bk-3)' },
+    { key:'d6_12', label:'6–12m', color:'var(--bk-4)' }
+  ];
+  var TDS_SMALL_N = 500; // bands below this are flagged as too small to compare
+  var tdsOn = { d1:true, d2:true, d3_6:true, d6_12:true };
+
+  document.querySelectorAll('#tdsBuckets .chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      var k = chip.getAttribute('data-bucket');
+      var onCount = TDS_BUCKETS.filter(function(b){ return tdsOn[b.key]; }).length;
+      if(tdsOn[k] && onCount === 1) return; // keep at least one window selected
+      tdsOn[k] = !tdsOn[k];
+      chip.classList.toggle('active', tdsOn[k]);
+      chip.setAttribute('aria-pressed', String(tdsOn[k]));
+      renderTds();
+    });
+  });
+
+  function windowSummary(buckets){
+    if(buckets.length === TDS_BUCKETS.length) return 'All windows, 0–12 months';
+    return buckets.map(function(b){ return b.label; }).join(' + ');
+  }
+
   function renderTds(){
     var mode = modeState.tds;
-    var rows = DATA.tds;
-    var maxRate = maxRateAcross(rows, 'machines', ['d1','d2','d3_6','d6_12']);
+    var minMachines = parseInt(document.getElementById('tdsMin').value, 10) || 0;
+    var rows = DATA.tds.filter(function(r){ return r.machines >= minMachines; });
+    var buckets = TDS_BUCKETS.filter(function(b){ return tdsOn[b.key]; });
+    function selected(r){ return buckets.reduce(function(a,b){ return a + r[b.key]; }, 0); }
 
+    // Table: every window, for the bands that pass the filter
+    var maxRate = maxRateAcross(rows, 'machines', ['d1','d2','d3_6','d6_12']);
     var tbody = document.querySelector('#tdsTable tbody');
     tbody.innerHTML = '';
     rows.forEach(function(r){
@@ -838,41 +900,75 @@
       tbody.appendChild(tr);
     });
 
-    // bar chart: 6-12m rate by band
+    // Chart: selected windows stacked per band, scaled to the largest bar
+    document.getElementById('tdsWindowHint').textContent = windowSummary(buckets);
+    var legend = document.getElementById('tdsLegend');
+    legend.innerHTML = '';
+    buckets.forEach(function(b){
+      var sp = document.createElement('span');
+      var sw = document.createElement('i'); sw.style.background = b.color;
+      sp.appendChild(sw); sp.appendChild(document.createTextNode(b.label));
+      legend.appendChild(sp);
+    });
+
+    function barValue(r, n){ return mode === 'pct' ? pct(n, r.machines) : n; }
+    var maxBar = Math.max.apply(null, rows.map(function(r){ return barValue(r, selected(r)); }).concat([0]));
     var barWrap = document.getElementById('tdsBars');
     barWrap.innerHTML = '';
-    var maxBarRate = Math.max.apply(null, rows.map(function(r){ return pct(r.d6_12, r.machines); }));
     rows.forEach(function(r){
-      var rate = pct(r.d6_12, r.machines);
+      var total = selected(r);
       var row = document.createElement('div');
-      row.className = 'bar-row';
+      row.className = 'bar-row' + (r.machines < TDS_SMALL_N ? ' small-n' : '');
+      row.title = r.band + ' ppm: ' + fmtInt(total) + ' defects of ' + fmtInt(r.machines) + ' machines (' + fmt1(pct(total, r.machines)) + '%)';
       var label = document.createElement('div');
       label.className = 'blabel';
       label.textContent = r.band;
       var track = document.createElement('div');
-      track.className = 'bar-track';
-      var fill = document.createElement('div');
-      fill.className = 'bar-fill';
-      fill.style.width = (maxBarRate > 0 ? (rate / maxBarRate * 100) : 0) + '%';
-      track.appendChild(fill);
+      track.className = 'stack-track';
+      buckets.forEach(function(b){
+        if(!r[b.key]) return;
+        var seg = document.createElement('span');
+        seg.style.background = b.color;
+        seg.style.width = (maxBar > 0 ? barValue(r, r[b.key]) / maxBar * 100 : 0) + '%';
+        seg.title = r.band + ' ppm · ' + b.label + ': ' + fmtInt(r[b.key]) + ' of ' + fmtInt(r.machines) + ' (' + fmt1(pct(r[b.key], r.machines)) + '%)';
+        track.appendChild(seg);
+      });
       var val = document.createElement('div');
       val.className = 'bval';
-      val.textContent = fmt1(rate) + '%';
+      val.textContent = mode === 'pct' ? fmt1(pct(total, r.machines)) + '%' : fmtInt(total);
+      if(r.machines < TDS_SMALL_N){
+        var note = document.createElement('small');
+        note.textContent = 'n=' + fmtInt(r.machines);
+        val.appendChild(note);
+      }
       row.appendChild(label); row.appendChild(track); row.appendChild(val);
       barWrap.appendChild(row);
     });
+    if(!rows.length){
+      barWrap.textContent = 'No TDS band has that many machines.';
+    }
 
-    var lowBand = rows[0], highBand = rows[rows.length-1];
-    var lowRate = pct(lowBand.d6_12, lowBand.machines);
-    var highRate = pct(highBand.d6_12, highBand.machines);
-    var multiple = lowRate > 0 ? (highRate / lowRate) : 0;
+    var hidden = DATA.tds.length - rows.length;
+    var smallShown = rows.filter(function(r){ return r.machines < TDS_SMALL_N; }).length;
+    document.getElementById('tdsNote').textContent =
+      'Input TDS was recorded for ' + fmt1(DATA.meta.tds_coverage_pct) + '% of installs (' + fmtInt(DATA.meta.tds_coverage_count) + ').' +
+      (smallShown ? ' Greyed bands have fewer than ' + fmtInt(TDS_SMALL_N) + ' machines, too few to compare reliably.' : '') +
+      (hidden ? ' ' + hidden + (hidden === 1 ? ' band' : ' bands') + ' hidden by the machine filter.' : '');
+
+    // Tiles
     var totalM = rows.reduce(function(a,r){ return a + r.machines; }, 0);
-    var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
+    var totalSel = rows.reduce(function(a,r){ return a + selected(r); }, 0);
+    var comparable = rows.filter(function(r){ return r.machines >= TDS_SMALL_N; });
+    var pool = comparable.length ? comparable : rows;
+    var top = pool.slice().sort(function(a,b){ return pct(selected(b), b.machines) - pct(selected(a), a.machines); })[0];
     var stats = document.getElementById('tdsStats');
     stats.innerHTML = '';
-    stats.appendChild(statTile('Machines in view', fmtInt(totalM), '5 TDS bands'));
-    stats.appendChild(statTile('Blended 6–12m rate', fmt1(pct(total6_12,totalM)) + '%', 'across all bands'));
-    stats.appendChild(statTile('High vs low TDS', multiple.toFixed(1) + '×', highBand.band + ' ppm vs ' + lowBand.band + ' ppm', true));
+    stats.appendChild(statTile('Machines with TDS', fmtInt(totalM), rows.length + (rows.length === 1 ? ' band' : ' bands') + ' shown'));
+    stats.appendChild(statTile('Defect rate', fmt1(pct(totalSel, totalM)) + '%', fmtInt(totalSel) + ' defects · ' + windowSummary(buckets)));
+    if(top){
+      stats.appendChild(statTile('Highest-rate band', top.band + ' ppm',
+        fmt1(pct(selected(top), top.machines)) + '% · ' + fmtInt(top.machines) + ' machines' + (comparable.length ? '' : ' (small sample)'), true));
+    }
   }
 
   function statTile(label, value, foot, flag){
@@ -973,7 +1069,7 @@
 
   document.getElementById('cohortRange').addEventListener('change', renderCohort);
   document.getElementById('geoPeriod').addEventListener('change', renderGeo);
-  document.getElementById('tdsPeriod').addEventListener('change', renderTds);
+  document.getElementById('tdsMin').addEventListener('change', renderTds);
 
   var initialized = false;
   function initDashboard(){
