@@ -340,7 +340,7 @@
     </div>
   </header>
 
-  <div class="sample-banner"><span class="pip"></span>Live figures — Ronch-assembled machines only, installs 15 Sep 2025 to 15 Sep 2026 (185,954 installs, 940 membrane defects). Spare production month traced for 73.4% of installs; input TDS captured for 8.3% of installs. Amber and UC-Direct assembly not yet in scope.</div>
+  <div class="sample-banner"><span class="pip"></span><span id="scopeBanner">Live figures — Ronch-assembled machines only, installs 15 Sep 2025 to 15 Sep 2026.</span></div>
 
   <div class="controls-row">
     <div class="control">
@@ -801,14 +801,15 @@
   }
 
   // ---------- Render: Geography ----------
-  // City key -> state. "Delhi NCR" stays one region: the source data doesn't split Delhi, Gurgaon and Noida.
-  var STATE_BY_CITY = {"city_agra_v2":"Uttar Pradesh","city_ahmedabad_v2":"Gujarat","city_ajmer_v2":"Rajasthan","city_akola_v2":"Maharashtra","city_aligarh_v2":"Uttar Pradesh","city_alwar_v2":"Rajasthan","city_ambala_v2":"Haryana","city_amravati_v2":"Maharashtra","city_amritsar_v2":"Punjab","city_anantapur_v2":"Andhra Pradesh","city_aurangabad_v2":"Maharashtra","city_baleshwar_v2":"Odisha","city_ballia_v2":"Uttar Pradesh","city_bangalore_v2":"Karnataka","city_bareilly_v2":"Uttar Pradesh","city_bathinda_v2":"Punjab","city_beed_v2":"Maharashtra","city_begusarai_v2":"Bihar","city_bhagalpur_v2":"Bihar","city_bhandara_v2":"Maharashtra","city_bharatpur_v2":"Rajasthan","city_bharuch_v2":"Gujarat","city_bhilwara_v2":"Rajasthan","city_bhojpur_v2":"Bihar","city_bhopal_v2":"Madhya Pradesh","city_bhubaneswar_v2":"Odisha","city_bilaspur_v2":"Chhattisgarh","city_bulandshahr_v2":"Uttar Pradesh","city_buldhana_v2":"Maharashtra","city_burhanpur_v2":"Madhya Pradesh","city_cachar_v2":"Assam","city_chandauli_v2":"Uttar Pradesh","city_chandigarh_v2":"Chandigarh","city_chandrapur_v2":"Maharashtra","city_chennai_v2":"Tamil Nadu","city_chhindwara_v2":"Madhya Pradesh","city_chikkaballapur_v2":"Karnataka","city_chitradurga_v2":"Karnataka","city_coimbatore_v2":"Tamil Nadu","city_cuttack_v2":"Odisha","city_dakshina_kannada_v2":"Karnataka","city_darjeeling_v2":"West Bengal","city_davanagere_v2":"Karnataka","city_dehradun_v2":"Uttarakhand","city_delhi_v2":"Delhi NCR","city_dhule_v2":"Maharashtra","city_erode_v2":"Tamil Nadu","city_etah_v2":"Uttar Pradesh","city_etawah_v2":"Uttar Pradesh","city_firozabad_v2":"Uttar Pradesh","city_ganjam_v2":"Odisha","city_gaya_v2":"Bihar","city_ghazipur_v2":"Uttar Pradesh","city_gondia_v2":"Maharashtra","city_gorakhpur_v2":"Uttar Pradesh","city_guna_v2":"Madhya Pradesh","city_guntur_rural_v2":"Andhra Pradesh","city_guntur_v2":"Andhra Pradesh","city_gurdaspur_v2":"Punjab","city_guwahati_v2":"Assam","city_gwalior_v2":"Madhya Pradesh","city_hapur_v2":"Uttar Pradesh","city_hassan_v2":"Karnataka","city_hazaribagh_v2":"Jharkhand","city_hisar_v2":"Haryana","city_hyderabad_v2":"Telangana","city_imphal_v2":"Manipur","city_indore_v2":"Madhya Pradesh","city_jabalpur_v2":"Madhya Pradesh","city_jaipur_v2":"Rajasthan","city_jalandhar_v2":"Punjab","city_jalgaon_v2":"Maharashtra","city_jalna_v2":"Maharashtra","city_jammu_v2":"Jammu and Kashmir","city_jamshedpur_v2":"Jharkhand","city_jaunpur_v2":"Uttar Pradesh","city_jhajjar_v2":"Haryana","city_jhansi_v2":"Uttar Pradesh","city_jodhpur_v2":"Rajasthan","city_jorhat_v2":"Assam","city_junagadh_v2":"Gujarat","city_kadapa_v2":"Andhra Pradesh","city_kalaburgi_v2":"Karnataka","city_kancheepuram_v2":"Tamil Nadu","city_kanpur_v2":"Uttar Pradesh","city_karnal_v2":"Haryana","city_karnataka_central_v2":"Karnataka","city_khammam_v2":"Telangana","city_khandwa_v2":"Madhya Pradesh","city_kheri_v2":"Uttar Pradesh","city_kochi_v2":"Kerala","city_koderma_v2":"Jharkhand","city_kolar_v2":"Karnataka","city_kolhapur_v2":"Maharashtra","city_kolkata_v2":"West Bengal","city_kota_v2":"Rajasthan","city_krishnagiri_v2":"Tamil Nadu","city_kurnool_v2":"Andhra Pradesh","city_latur_v2":"Maharashtra","city_lucknow_v2":"Uttar Pradesh","city_ludhiana_v2":"Punjab","city_madurai_v2":"Tamil Nadu","city_maharashtra_ratnagiri_v2":"Maharashtra","city_mahbubnagar_v2":"Telangana","city_mahesana_v2":"Gujarat","city_maldah_v2":"West Bengal","city_malerkotla_v2":"Punjab","city_mancherial_v2":"Telangana","city_mau_v2":"Uttar Pradesh","city_meerut_v2":"Uttar Pradesh","city_mirzapur_v2":"Uttar Pradesh","city_moradabad_v2":"Uttar Pradesh","city_mumbai_v2":"Maharashtra","city_murshidabad_v2":"West Bengal","city_murud_(raigad)_v2":"Maharashtra","city_muzaffarpur_v2":"Bihar","city_mysore_v2":"Karnataka","city_nadia_district_v2":"West Bengal","city_nagpur_v2":"Maharashtra","city_naini_tal_v2":"Uttarakhand","city_nalanda_v2":"Bihar","city_nalgonda_v2":"Telangana","city_nanded_v2":"Maharashtra","city_nandurbar_v2":"Maharashtra","city_nashik_v2":"Maharashtra","city_nellore_v2":"Andhra Pradesh","city_nizamabad_v2":"Telangana","city_north_goa_v2":"Goa","city_palghar_v2":"Maharashtra","city_patiala_v2":"Punjab","city_patna_v2":"Bihar","city_peddapalli_v2":"Telangana","city_petlad_v2":"Gujarat","city_prakasam_v2":"Andhra Pradesh","city_prayagraj_v2":"Uttar Pradesh","city_pune_v2":"Maharashtra","city_purba_bardhaman_v2":"West Bengal","city_purbi_champaran_v2":"Bihar","city_raipur_v2":"Chhattisgarh","city_rajahmundry_v2":"Andhra Pradesh","city_rajkot_v2":"Gujarat","city_ramanagara_v2":"Karnataka","city_ranchi_v2":"Jharkhand","city_ranipet_v2":"Tamil Nadu","city_ratlam_v2":"Madhya Pradesh","city_sagar_v2":"Madhya Pradesh","city_saharsa_v2":"Bihar","city_salem_v2":"Tamil Nadu","city_samastipur_v2":"Bihar","city_sambalpur_v2":"Odisha","city_sangareddi_v2":"Telangana","city_sangli_v2":"Maharashtra","city_saran_v2":"Bihar","city_satara_v2":"Maharashtra","city_satna_v2":"Madhya Pradesh","city_shimoga_v2":"Karnataka","city_siddipet_v2":"Telangana","city_sikar_v2":"Rajasthan","city_siwan_v2":"Bihar","city_solan_v2":"Himachal Pradesh","city_solapur_v2":"Maharashtra","city_sonipat_v2":"Haryana","city_srikakulam_v2":"Andhra Pradesh","city_sultanpur_v2":"Uttar Pradesh","city_surat_v2":"Gujarat","city_suryapet_v2":"Telangana","city_thiruvallur_v2":"Tamil Nadu","city_thiruvananthapuram_v2":"Kerala","city_thoothukudi_v2":"Tamil Nadu","city_thrissur_v2":"Kerala","city_tiruchirappalli_v2":"Tamil Nadu","city_tirupati_v2":"Andhra Pradesh","city_tiruppur_v2":"Tamil Nadu","city_tumakuru_v2":"Karnataka","city_udaipur_v2":"Rajasthan","city_udupi_v2":"Karnataka","city_ujjain_v2":"Madhya Pradesh","city_unnao_v2":"Uttar Pradesh","city_vadodara_v2":"Gujarat","city_valsad_v2":"Gujarat","city_varanasi_v2":"Uttar Pradesh","city_vellore_v2":"Tamil Nadu","city_vijayapura_v2":"Karnataka","city_vijayawada_v2":"Andhra Pradesh","city_vishakapatnam_v2":"Andhra Pradesh","city_warangal_v2":"Telangana","city_wardha_v2":"Maharashtra","city_west_tripura_v2":"Tripura","city_yavatmal_v2":"Maharashtra"};
+  // City name (lower-cased) -> state. "Delhi NCR" stays one region: the source data doesn't split Delhi, Gurgaon and Noida.
+  var STATE_BY_CITY = {"agra":"Uttar Pradesh","ahmedabad":"Gujarat","ajmer":"Rajasthan","akola":"Maharashtra","aligarh":"Uttar Pradesh","alwar":"Rajasthan","ambala":"Haryana","amravati":"Maharashtra","amritsar":"Punjab","anantapur":"Andhra Pradesh","aurangabad":"Maharashtra","baleshwar":"Odisha","ballia":"Uttar Pradesh","bangalore":"Karnataka","bareilly":"Uttar Pradesh","bathinda":"Punjab","beed":"Maharashtra","begusarai":"Bihar","bhagalpur":"Bihar","bhandara":"Maharashtra","bharatpur":"Rajasthan","bharuch":"Gujarat","bhilwara":"Rajasthan","bhojpur":"Bihar","bhopal":"Madhya Pradesh","bhubaneswar":"Odisha","bilaspur":"Chhattisgarh","bulandshahr":"Uttar Pradesh","buldana":"Maharashtra","burhanpur":"Madhya Pradesh","cachar":"Assam","chandauli":"Uttar Pradesh","chandigarh":"Chandigarh","chandrapur":"Maharashtra","chennai":"Tamil Nadu","chhindwara":"Madhya Pradesh","chikkaballapur":"Karnataka","chitradurga":"Karnataka","coimbatore":"Tamil Nadu","cuttack":"Odisha","dakshina kannada":"Karnataka","darjeeling":"West Bengal","davanagere":"Karnataka","dehradun":"Uttarakhand","delhi ncr":"Delhi NCR","dhule":"Maharashtra","erode":"Tamil Nadu","etah":"Uttar Pradesh","etawah":"Uttar Pradesh","firozabad":"Uttar Pradesh","ganjam":"Odisha","gaya":"Bihar","ghazipur":"Uttar Pradesh","gondia":"Maharashtra","gorakhpur":"Uttar Pradesh","guna":"Madhya Pradesh","guntur":"Andhra Pradesh","gurdaspur":"Punjab","guwahati":"Assam","gwalior":"Madhya Pradesh","hapur":"Uttar Pradesh","hassan":"Karnataka","hazaribagh":"Jharkhand","hisar":"Haryana","hyderabad":"Telangana","imphal":"Manipur","indore":"Madhya Pradesh","jabalpur":"Madhya Pradesh","jaipur":"Rajasthan","jalandhar":"Punjab","jalgaon":"Maharashtra","jalna":"Maharashtra","jammu":"Jammu and Kashmir","jamshedpur":"Jharkhand","jaunpur":"Uttar Pradesh","jhajjar":"Haryana","jhansi":"Uttar Pradesh","jodhpur":"Rajasthan","jorhat":"Assam","junagadh":"Gujarat","kadapa":"Andhra Pradesh","kalaburgi":"Karnataka","kancheepuram":"Tamil Nadu","kanpur":"Uttar Pradesh","karnal":"Haryana","karnataka_central":"Karnataka","khammam":"Telangana","khandwa":"Madhya Pradesh","kheri":"Uttar Pradesh","kochi":"Kerala","koderma":"Jharkhand","kolar":"Karnataka","kolhapur":"Maharashtra","kolkata":"West Bengal","kota":"Rajasthan","krishnagiri":"Tamil Nadu","kurnool":"Andhra Pradesh","latur":"Maharashtra","lucknow":"Uttar Pradesh","ludhiana":"Punjab","madurai":"Tamil Nadu","mahbubnagar":"Telangana","mahesana":"Gujarat","maldah":"West Bengal","malerkotla":"Punjab","mancherial":"Telangana","mau":"Uttar Pradesh","meerut":"Uttar Pradesh","mirzapur":"Uttar Pradesh","moradabad":"Uttar Pradesh","mumbai":"Maharashtra","murshidabad":"West Bengal","muzaffarpur":"Bihar","mysore":"Karnataka","nadia district":"West Bengal","nadurbar":"Maharashtra","nagpur":"Maharashtra","naini tal":"Uttarakhand","nalanda":"Bihar","nalgonda":"Telangana","nanded":"Maharashtra","nashik":"Maharashtra","nellore":"Andhra Pradesh","nizamabad":"Telangana","north goa":"Goa","palghar":"Maharashtra","patiala":"Punjab","patna":"Bihar","peddapalli":"Telangana","petlad":"Gujarat","prakasham":"Andhra Pradesh","prayagraj":"Uttar Pradesh","pune":"Maharashtra","purba bardhaman":"West Bengal","purbi champaran":"Bihar","raigad":"Maharashtra","raipur":"Chhattisgarh","rajahmundry":"Andhra Pradesh","rajkot":"Gujarat","ramanagara":"Karnataka","ranchi":"Jharkhand","ranipet":"Tamil Nadu","ratlam":"Madhya Pradesh","ratnagiri":"Maharashtra","sagar":"Madhya Pradesh","saharsa":"Bihar","salem":"Tamil Nadu","samastipur":"Bihar","sambalpur":"Odisha","sangareddi":"Telangana","sangli":"Maharashtra","saran":"Bihar","satara":"Maharashtra","satna":"Madhya Pradesh","shimoga":"Karnataka","siddipet":"Telangana","sikar":"Rajasthan","siwan":"Bihar","solan":"Himachal Pradesh","solapur":"Maharashtra","sonipat":"Haryana","srikakulam":"Andhra Pradesh","sultanpur":"Uttar Pradesh","surat":"Gujarat","suryapet":"Telangana","thiruvallur":"Tamil Nadu","thiruvananthapuram":"Kerala","thoothukudi":"Tamil Nadu","thrissur":"Kerala","tiruchirappalli":"Tamil Nadu","tirupati":"Andhra Pradesh","tiruppur":"Tamil Nadu","tumakuru":"Karnataka","udaipur":"Rajasthan","udupi":"Karnataka","ujjain":"Madhya Pradesh","unnao":"Uttar Pradesh","vadodara":"Gujarat","valsad":"Gujarat","varanasi":"Uttar Pradesh","vellore":"Tamil Nadu","vijayapura":"Karnataka","vijayawada":"Andhra Pradesh","vishakapatnam":"Andhra Pradesh","warangal":"Telangana","wardha":"Maharashtra","west tripura":"Tripura","yavatmal":"Maharashtra"};
+  function stateOf(r){ return STATE_BY_CITY[(r.state || '').trim().toLowerCase().replace(/\s+/g, ' ')] || 'Other'; }
   var geoLevel = 'state';
 
   function geoRowsByState(){
     var byState = {};
     DATA.geo.forEach(function(r){
-      var st = STATE_BY_CITY[r.key] || 'Other';
+      var st = stateOf(r);
       var agg = byState[st] || (byState[st] = { state: st, cities: 0, spares: 0, d1: 0, d2: 0, d3_6: 0, d6_12: 0 });
       agg.cities += 1; agg.spares += r.spares;
       agg.d1 += r.d1; agg.d2 += r.d2; agg.d3_6 += r.d3_6; agg.d6_12 += r.d6_12;
@@ -854,7 +855,7 @@
       var tdLabel = document.createElement('td');
       tdLabel.className = 'rowlabel';
       tdLabel.textContent = r.state;
-      if(byCity) tdLabel.title = STATE_BY_CITY[r.key] || '';
+      if(byCity) tdLabel.title = stateOf(r);
       else tdLabel.title = r.cities + (r.cities === 1 ? ' city' : ' cities');
       tr.appendChild(tdLabel);
       var tdSpares = document.createElement('td');
@@ -1033,7 +1034,15 @@
       var o2 = document.createElement('option'); o2.value = m; o2.textContent = DATA.monthLabels[i];
       installSel.appendChild(o2);
     });
-    ['Ronch','Amber','UC Direct'].forEach(function(s){
+    // Options come from the data, so a new sold-to label can never be unfilterable
+    var SOLD_ORDER = ['Ronch', 'Amber', 'UC'];
+    var soldValues = [];
+    DATA.rows.forEach(function(r){ if(r.sold_to && soldValues.indexOf(r.sold_to) < 0) soldValues.push(r.sold_to); });
+    soldValues.sort(function(a,b){
+      var ia = SOLD_ORDER.indexOf(a), ib = SOLD_ORDER.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+    });
+    soldValues.forEach(function(s){
       var o = document.createElement('option'); o.value = s; o.textContent = s; soldSel.appendChild(o);
     });
     DATA.tds.forEach(function(t){
@@ -1130,7 +1139,19 @@
     tfoot.appendChild(tr);
   }
 
+  // Banner figures come from the data itself, so a data rebuild can't leave them stale
+  function renderBanner(){
+    var m = DATA.meta;
+    var defects = m.total_defect_events != null ? m.total_defect_events : m.total_defects;
+    document.getElementById('scopeBanner').textContent =
+      'Live figures — Ronch-assembled machines only, installs 15 Sep 2025 to 15 Sep 2026 (' +
+      fmtInt(m.total_installs) + ' installs, ' + fmtInt(defects) + ' membrane defects). ' +
+      'Spare production month traced for ' + fmt1(m.matched_to_part2_pct) + '% of installs; input TDS captured for ' +
+      fmt1(m.tds_coverage_pct) + '% of installs. Amber and UC-Direct assembly not yet in scope.';
+  }
+
   function renderAll(){
+    renderBanner();
     renderCohort();
     renderGeo();
     renderTds();
