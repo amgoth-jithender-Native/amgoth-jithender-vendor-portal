@@ -8,10 +8,29 @@ water quality (TDS), and row-level spare records.
 
 ## Status
 
-**Real data wired in — scope: Ronch-assembled machines only.** Login is still a
-hardcoded demo credential with no real backend; the numbers on every tab are
-computed from an actual join of UC's install/defect data against the
-manufacturing scan data, not mock figures.
+**Real data wired in — scope: Ronch-assembled machines only.** Login now uses
+real Supabase authentication with role-based access (admin/team/vendor) — the
+hardcoded demo credential from the original prototype is gone. The numbers on
+every tab are computed from an actual join of UC's install/defect data against
+the manufacturing scan data, not mock figures.
+
+**Cross-validated against true production records (2026-09-30):** every
+number below has now been checked against Ronch's own production log (a
+separate Google Sheet, not UC's warehouse) — genuinely independent evidence,
+not another pull from the same pipeline. Full detail, including the month-by-
+month breakdown, is in the "Production coverage" banner on the live page
+itself (click it to expand) — this isn't just documentation, vendors can see
+the same disclosure.
+- Lifetime true Ronch production: 392,584 units. Machine-barcode tracking
+  (the system this whole dashboard depends on) only exists from **Sep 2025
+  onward** — everything produced Feb–Aug 2025 (127,770 real units) is a
+  genuine historical blind spot, not a query gap.
+- Within the tracked window, barcode-capture rate is **97.6%** (258,520 of
+  264,814 true units) — the scanning process itself works well once it exists.
+- This resolves the earlier "~21% no barcode match" concern in one important
+  way: it's now clear most of that gap is concentrated in *when* a machine
+  was produced (pre-tracking) rather than being a uniform, unexplained
+  scanning failure throughout.
 
 - **181,795 Ronch RO installs**, 15 Sep 2025 – 15 Sep 2026 — machine identity now
   resolved via scan-verified barcode records (`REQUESTXBARCODEXSCANSTATUS__DAILY__FACTS`)
@@ -57,9 +76,9 @@ Not yet in scope (would extend the same pipeline):
 ## Running it
 
 This is a single static `index.html` — no build step. Open it directly in a
-browser, or serve the folder with any static file server.
-
-Demo login: `dheerajbathla@urbancompany.com` / `dheeraj@123`
+browser, or serve the folder with any static file server. Real login now
+requires Supabase credentials (see `config.local.js`, git-ignored) — the
+original hardcoded demo login is gone.
 
 ## Structure
 
