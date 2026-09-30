@@ -257,6 +257,11 @@
   .clip-cap{ margin-top:10px; font-size:0.8rem; color:var(--ink-2); line-height:1.45; }
   .clip-meta{ margin-top:6px; font-size:0.72rem; color:var(--ink-muted); font-family:var(--font-mono); }
   .clip-tabs{ display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+  .clip-admin{ display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); flex-wrap:wrap; align-items:center; }
+  .clip-admin .danger{ color:#b42318; border-color:color-mix(in oklab, #b42318 40%, var(--border)); }
+  .clip-admin .danger.armed{ background:#b42318; color:#fff; }
+  .clip-admin-msg{ font-size:0.72rem; color:var(--ink-muted); }
+  .clip-hidden-tag{ font-size:0.68rem; font-weight:700; color:#b54708; background:color-mix(in oklab, #f79009 15%, var(--surface)); border-radius:5px; padding:2px 7px; }
 
   .legend-row{ display:flex; align-items:center; gap:14px; padding:0 18px 14px; flex-wrap:wrap; }
   .legend-swatch{ display:flex; align-items:center; gap:12px; font-size:0.73rem; color:var(--ink-muted); font-weight:600; }
@@ -590,8 +595,10 @@
         roleEl.textContent = ROLE_LABELS[res.data.role] || res.data.role;
         roleEl.hidden = false;
         currentRole = res.data.role;
-        initDashboard();
-        applyRoleViews();
+        return loadModeration().then(function(){
+          initDashboard();
+          applyRoleViews();
+        });
       });
   }
 
@@ -1126,9 +1133,36 @@
   }
 
   // Video proof comes from video-proof.js (window.MW_VIDEO_PROOF), keyed by machine barcode.
+  // Admins can hide a clip from vendors or delete it for everyone (table video_moderation).
+  var moderation = {}; // clip url -> 'hidden' | 'deleted'
+
+  function loadModeration(){
+    return sb.from('video_moderation').select('clip_url, status').then(function(res){
+      moderation = {};
+      if(res.error){ console.warn('video_moderation not readable:', res.error.message); return; }
+      res.data.forEach(function(m){ moderation[m.clip_url] = m.status; });
+    }, function(){ moderation = {}; });
+  }
+
   function clipsFor(r){
     var map = window.MW_VIDEO_PROOF || {};
-    return (r.machine_barcode && map[r.machine_barcode]) || [];
+    var all = (r.machine_barcode && map[r.machine_barcode]) || [];
+    var staff = currentRole === 'admin' || currentRole === 'team_management';
+    return all.filter(function(c){
+      var st = moderation[c.url];
+      return st !== 'deleted' && (st !== 'hidden' || staff);
+    });
+  }
+
+  function setModeration(r, c, status){
+    var q = status
+      ? sb.from('video_moderation').upsert({ clip_url: c.url, machine_barcode: r.machine_barcode, status: status })
+      : sb.from('video_moderation').delete().eq('clip_url', c.url);
+    return q.then(function(res){
+      if(res.error) throw res.error;
+      if(status) moderation[c.url] = status; else delete moderation[c.url];
+      renderRows();
+    });
   }
 
   function openClip(r, clips){
@@ -1143,10 +1177,47 @@
     var video = document.createElement('video'); video.controls = true; video.playsInline = true; video.preload = 'metadata';
     var cap = document.createElement('div'); cap.className = 'clip-cap';
     var meta = document.createElement('div'); meta.className = 'clip-meta';
+    var hiddenTag = document.createElement('span'); hiddenTag.className = 'clip-hidden-tag'; hiddenTag.textContent = 'Hidden from vendors';
+    head.insertBefore(hiddenTag, close);
+    var admin = currentRole === 'admin' ? document.createElement('div') : null;
+    var current = null;
     function show(c){
+      current = c;
       video.src = c.url;
       cap.textContent = (c.tag ? c.tag + ': ' : '') + (c.caption || '');
       meta.textContent = 'Visit ' + (c.visit_date || '—') + ' · Spare ' + (r.barcode || '—');
+      hiddenTag.hidden = moderation[c.url] !== 'hidden';
+      if(admin) renderAdmin();
+    }
+
+    function renderAdmin(){
+      admin.className = 'clip-admin'; admin.innerHTML = '';
+      var isHidden = moderation[current.url] === 'hidden';
+      var hideBtn = document.createElement('button'); hideBtn.className = 'clip-close';
+      hideBtn.textContent = isHidden ? 'Show to vendors' : 'Hide from vendors';
+      var delBtn = document.createElement('button'); delBtn.className = 'clip-close danger'; delBtn.textContent = 'Delete clip';
+      var msg = document.createElement('span'); msg.className = 'clip-admin-msg';
+      admin.appendChild(hideBtn); admin.appendChild(delBtn); admin.appendChild(msg);
+
+      function run(btn, status, done){
+        hideBtn.disabled = delBtn.disabled = true; msg.textContent = 'Saving…';
+        setModeration(r, current, status).then(done, function(err){
+          hideBtn.disabled = delBtn.disabled = false;
+          msg.textContent = 'Could not save: ' + (err.message || err);
+        });
+      }
+      hideBtn.addEventListener('click', function(){
+        run(hideBtn, isHidden ? null : 'hidden', function(){ show(current); });
+      });
+      // Two clicks to delete: the first arms the button
+      delBtn.addEventListener('click', function(){
+        if(!delBtn.classList.contains('armed')){
+          delBtn.classList.add('armed'); delBtn.textContent = 'Click again to delete';
+          msg.textContent = 'Removes this clip from the portal for everyone.';
+          return;
+        }
+        run(delBtn, 'deleted', dismiss);
+      });
     }
     if(clips.length > 1){
       clips.forEach(function(c, i){
@@ -1157,6 +1228,7 @@
       box.appendChild(tabs);
     }
     box.appendChild(video); box.appendChild(cap); box.appendChild(meta);
+    if(admin) box.appendChild(admin);
     overlay.appendChild(box); document.body.appendChild(overlay);
     show(clips[0]);
 
