@@ -42,7 +42,7 @@ jobs:
             exit 1
           fi
           mkdir -p _site
-          cp index.html _site/
+          cp index.html video-proof.js _site/
           sed -i "s|PASTE_PUBLISHABLE_KEY_HERE|${SUPABASE_PUBLISHABLE_KEY}|" _site/index.html
 
       - uses: actions/configure-pages@v5
