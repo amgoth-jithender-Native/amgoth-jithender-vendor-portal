@@ -340,7 +340,13 @@
     </div>
   </header>
 
-  <div class="sample-banner"><span class="pip"></span>Live figures — Ronch-assembled machines only, installs 15 Sep 2025 to 15 Sep 2026 (185,954 installs, 940 membrane defects). Spare production month traced for 73.4% of installs; input TDS captured for 8.3% of installs. Amber and UC-Direct assembly not yet in scope.</div>
+  <div class="sample-banner" id="sampleBanner"><span class="pip"></span>Loading current figures…</div>
+
+  <div class="sample-banner" id="coverageBanner" style="background:color-mix(in oklab, var(--accent) 10%, var(--surface)); cursor:pointer;" title="Click to expand data-coverage details">
+    <span class="pip" style="background:var(--accent)"></span>
+    <span id="coverageSummary">Loading production coverage…</span>
+  </div>
+  <div id="coverageDetail" hidden style="padding:12px clamp(16px,3vw,32px); background:var(--surface-2); border-bottom:1px solid var(--border); font-size:0.78rem; color:var(--ink-2); line-height:1.6;"></div>
 
   <div class="controls-row">
     <div class="control">
