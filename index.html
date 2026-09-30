@@ -1,6 +1,7 @@
 <title>Membrane Watch</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>if(location.protocol==="file:")document.write('<script src="config.local.js"><\/script>')</script>
+<script src="video-proof.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   :root{
@@ -247,6 +248,15 @@
   .video-btn{ border:1px solid var(--border); background:var(--surface-2); color:var(--ink-muted); border-radius:6px; padding:4px 9px; font-size:0.72rem; font-weight:700; cursor:default; display:inline-flex; align-items:center; gap:4px; }
   .video-btn.has{ color:var(--accent-strong); border-color:color-mix(in oklab, var(--accent) 40%, var(--border)); cursor:pointer; }
   .video-btn.has:hover{ background:var(--accent-soft); }
+
+  .clip-overlay{ position:fixed; inset:0; background:rgba(8,16,20,0.72); display:flex; align-items:center; justify-content:center; padding:16px; z-index:1000; }
+  .clip-box{ background:var(--surface); border-radius:12px; padding:14px; width:min(440px,100%); max-height:100%; overflow:auto; box-shadow:0 12px 40px rgba(0,0,0,0.35); }
+  .clip-box video{ width:100%; max-height:70vh; border-radius:8px; background:#000; display:block; }
+  .clip-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; font-weight:700; font-size:0.85rem; }
+  .clip-close{ border:1px solid var(--border); background:var(--surface-2); border-radius:6px; padding:3px 10px; cursor:pointer; font-weight:700; }
+  .clip-cap{ margin-top:10px; font-size:0.8rem; color:var(--ink-2); line-height:1.45; }
+  .clip-meta{ margin-top:6px; font-size:0.72rem; color:var(--ink-muted); font-family:var(--font-mono); }
+  .clip-tabs{ display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
 
   .legend-row{ display:flex; align-items:center; gap:14px; padding:0 18px 14px; flex-wrap:wrap; }
   .legend-swatch{ display:flex; align-items:center; gap:12px; font-size:0.73rem; color:var(--ink-muted); font-weight:600; }
@@ -1097,9 +1107,11 @@
 
       var tdV = document.createElement('td'); tdV.style.textAlign='left';
       var vbtn = document.createElement('span');
-      vbtn.className = 'video-btn' + (r.video ? ' has' : '');
-      vbtn.textContent = r.video ? '▶ View clip' : '— none';
-      vbtn.title = r.video ? 'Sample record — no real video attached in this prototype' : 'No video proof on file';
+      var clips = clipsFor(r);
+      vbtn.className = 'video-btn' + (clips.length ? ' has' : '');
+      vbtn.textContent = clips.length ? '▶ View clip' : '— none';
+      vbtn.title = clips.length ? (clips[0].tag || 'Video proof') : 'No video proof on file';
+      if(clips.length) vbtn.addEventListener('click', function(){ openClip(r, clips); });
       tdV.appendChild(vbtn); tr.appendChild(tdV);
 
       tbody.appendChild(tr);
@@ -1107,6 +1119,48 @@
 
     document.getElementById('rowCount').textContent = 'Showing ' + rows.length + ' of ' + DATA.rows.length + ' records';
     renderRowsOverall(rows);
+  }
+
+  // Video proof comes from video-proof.js (window.MW_VIDEO_PROOF), keyed by machine barcode.
+  function clipsFor(r){
+    var map = window.MW_VIDEO_PROOF || {};
+    return (r.machine_barcode && map[r.machine_barcode]) || [];
+  }
+
+  function openClip(r, clips){
+    var overlay = document.createElement('div'); overlay.className = 'clip-overlay';
+    var box = document.createElement('div'); box.className = 'clip-box';
+    var head = document.createElement('div'); head.className = 'clip-head';
+    var title = document.createElement('span'); title.textContent = 'Machine ' + r.machine_barcode;
+    var close = document.createElement('button'); close.className = 'clip-close'; close.textContent = 'Close';
+    head.appendChild(title); head.appendChild(close); box.appendChild(head);
+
+    var tabs = document.createElement('div'); tabs.className = 'clip-tabs';
+    var video = document.createElement('video'); video.controls = true; video.playsInline = true; video.preload = 'metadata';
+    var cap = document.createElement('div'); cap.className = 'clip-cap';
+    var meta = document.createElement('div'); meta.className = 'clip-meta';
+    function show(c){
+      video.src = c.url;
+      cap.textContent = (c.tag ? c.tag + ': ' : '') + (c.caption || '');
+      meta.textContent = 'Visit ' + (c.visit_date || '—') + ' · Spare ' + (r.barcode || '—');
+    }
+    if(clips.length > 1){
+      clips.forEach(function(c, i){
+        var b = document.createElement('button'); b.className = 'clip-close'; b.textContent = 'Clip ' + (i + 1);
+        b.addEventListener('click', function(){ show(c); });
+        tabs.appendChild(b);
+      });
+      box.appendChild(tabs);
+    }
+    box.appendChild(video); box.appendChild(cap); box.appendChild(meta);
+    overlay.appendChild(box); document.body.appendChild(overlay);
+    show(clips[0]);
+
+    function dismiss(){ video.pause(); overlay.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e){ if(e.key === 'Escape') dismiss(); }
+    close.addEventListener('click', dismiss);
+    overlay.addEventListener('click', function(e){ if(e.target === overlay) dismiss(); });
+    document.addEventListener('keydown', onKey);
   }
 
   function renderRowsOverall(rows){
@@ -1118,7 +1172,7 @@
       soldTo[r.sold_to] = (soldTo[r.sold_to] || 0) + 1;
       tenureSum += r.tenure_days;
       if(r.tds_band) withTds++;
-      if(r.video) withVideo++;
+      if(clipsFor(r).length) withVideo++;
     });
     var cells = [
       ['Overall', 'left'],
