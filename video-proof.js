@@ -1,6 +1,6 @@
 // Video proof for membrane replacements, keyed by machine barcode.
 // Clips play from their original UC proof-of-work storage (not copied into this repo).
-// Generated from ~/uc-audit/batch_ro_membrane (video audit of 30 Sep 2026).
+// Generated from ~/uc-audit/batch_ro_membrane, batch2 and batch3 (video audits of 30 Sep and 1 Oct 2026).
 window.MW_VIDEO_PROOF = {
  "NVM1XRP260704034": [
   {
@@ -63,6 +63,60 @@ window.MW_VIDEO_PROOF = {
    "visit_date": "2026-09-13",
    "tag": "Low flow",
    "caption": "Unit opened: one line only drips while the other keeps flowing."
+  }
+ ],
+ "NVM1XRP251206905": [
+  {
+   "url": "https://s3-ap-southeast-1.amazonaws.com/media-signed-uploads/prod/videos/proofOfWork/59ed03626d7c2d6c00b45e99/6ab4a8aeb488000b7173b652_1790224558494.mp4",
+   "request_id": "75f2e8bd2efceb70503f8c32",
+   "visit_date": "2026-09-24",
+   "tag": "High TDS",
+   "caption": "Water running from the purifier's tube into a cup reads about 190–235 ppm on a live TDS meter."
+  }
+ ],
+ "NVM1XRP251211471": [
+  {
+   "url": "https://s3-ap-southeast-1.amazonaws.com/media-signed-uploads/prod/videos/proofOfWork/5fd728d161a021240009d096/6aa3a9a3c995c6b5fb9897b1_1789110691441.mp4",
+   "request_id": "6aa37af54de2f0000cc44e72",
+   "visit_date": "2026-09-11",
+   "tag": "Low flow",
+   "caption": "The disconnected outlet tube from the membrane housing gives only slow single drops."
+  }
+ ],
+ "NVM2RPP250803615": [
+  {
+   "url": "https://s3-ap-southeast-1.amazonaws.com/media-signed-uploads/prod/videos/proofOfWork/6376d133b7f1e30027076d7f/6aa6490ed6cfa34889ce8af9_1789282574253.mp4",
+   "request_id": "6aa56e4b334b41000a212bf0",
+   "visit_date": "2026-09-13",
+   "tag": "Membrane fouling",
+   "caption": "Removed cartridge's spiral-wound end is brown and stained around the centre tube."
+  }
+ ],
+ "NVM1XRP260105450": [
+  {
+   "url": "https://s3-ap-southeast-1.amazonaws.com/media-signed-uploads/prod/videos/proofOfWork/68ef9ce2993f760027324d9c/6aaa5140ae7b60afb47ea246_1789546816512.mp4",
+   "request_id": "6aa7ac9306f645000b41d0f2",
+   "visit_date": "2026-09-16",
+   "tag": "Membrane fouling",
+   "caption": "Removed NATIVE membrane shows a dark brown core and discoloured end face, next to a clean membrane for comparison."
+  }
+ ],
+ "NVM2RPP250806022": [
+  {
+   "url": "https://s3-ap-southeast-1.amazonaws.com/media-signed-uploads/prod/videos/proofOfWork/63eaf5502d7e900024b24fe7/6aa94c7016fd62b57de28414_1789480048419.mp4",
+   "request_id": "6aa8045d492cc2000b4dfd45",
+   "visit_date": "2026-09-15",
+   "tag": "Membrane fouling",
+   "caption": "Brief close-up of the old membrane's end face, heavily brown-stained."
+  }
+ ],
+ "NVM1XRP251002863": [
+  {
+   "url": "https://s3-ap-southeast-1.amazonaws.com/media-signed-uploads/prod/videos/proofOfWork/6014250ef12a24280090455d/6aa94ead16fd62b57de2a0a8_1789480621139.mp4",
+   "request_id": "6aa91214cae3ce000bc79ba1",
+   "visit_date": "2026-09-17",
+   "tag": "Membrane fouling",
+   "caption": "The old membrane's end cap is caked in brown-black deposits, turned by hand to show it."
   }
  ]
 };
