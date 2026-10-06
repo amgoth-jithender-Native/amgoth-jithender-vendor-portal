@@ -444,7 +444,7 @@
         <div class="card-head"><h2 id="geoTitle">Defect rate by state</h2><span class="hint">Ranked by total spares shipped</span></div>
         <div class="table-wrap">
           <table id="geoTable">
-            <thead><tr><th id="geoLabelHead">State</th><th class="abs-col">Spares shipped</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th><th>Overall</th></tr></thead>
+            <thead><tr><th id="geoLabelHead">State</th><th class="abs-col">Spares shipped</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th><th>12–18m defect</th><th>18–24m defect</th><th>Overall</th></tr></thead>
             <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
@@ -476,7 +476,7 @@
         <div class="card-head"><h2>Defect rate by TDS band</h2><span class="hint" id="tdsWindowHint">All windows, 0–12 months</span></div>
         <div class="table-wrap">
           <table id="tdsTable">
-            <thead><tr><th>TDS range (ppm)</th><th class="abs-col">Machines</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th></tr></thead>
+            <thead><tr><th>TDS range (ppm)</th><th class="abs-col">Machines</th><th>1m defect</th><th>2m defect</th><th>3–6m defect</th><th>6–12m defect</th><th>12–18m defect</th><th>18–24m defect</th><th>Overall</th></tr></thead>
             <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
@@ -934,10 +934,10 @@
       else tdLabel.title = r.cities + (r.cities === 1 ? ' city' : ' cities');
       tr.appendChild(tdLabel);
       tr.appendChild(denomCell(r.spares));
-      appendWindowCells(tr, r, r.spares, mode, maxRate, OBSERVED_KEYS, true, maxTotal);
+      appendWindowCells(tr, r, r.spares, mode, maxRate, COHORT_KEYS, true, maxTotal);
       tbody.appendChild(tr);
     });
-    renderOverallRow('geoTable', rows, 'spares', mode, OBSERVED_KEYS, true);
+    renderOverallRow('geoTable', rows, 'spares', mode, COHORT_KEYS, true);
 
     var totalSpares = rows.reduce(function(a,r){ return a + r.spares; }, 0);
     var total6_12 = rows.reduce(function(a,r){ return a + r.d6_12; }, 0);
@@ -987,6 +987,7 @@
 
     // Table: every window, for the bands that pass the filter
     var maxRate = maxRateAcross(rows, 'machines', OBSERVED_KEYS);
+    var maxTotal = maxTotalRate(rows, 'machines');
     var tbody = document.querySelector('#tdsTable tbody');
     tbody.innerHTML = '';
     rows.forEach(function(r){
@@ -996,10 +997,10 @@
       tdLabel.textContent = r.band;
       tr.appendChild(tdLabel);
       tr.appendChild(denomCell(r.machines));
-      appendWindowCells(tr, r, r.machines, mode, maxRate, OBSERVED_KEYS, false);
+      appendWindowCells(tr, r, r.machines, mode, maxRate, COHORT_KEYS, true, maxTotal);
       tbody.appendChild(tr);
     });
-    renderOverallRow('tdsTable', rows, 'machines', mode);
+    renderOverallRow('tdsTable', rows, 'machines', mode, COHORT_KEYS, true);
     document.getElementById('tdsWindowHint').textContent = 'Table shows every window · tiles use ' + windowSummary(buckets);
 
     var hidden = DATA.tds.length - rows.length;
