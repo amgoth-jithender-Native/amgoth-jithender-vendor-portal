@@ -51,8 +51,20 @@ the same disclosure.
   the machine-barcode ↔ spare-barcode scan data — this only applies to a
   machine's *first* replacement, since UC-channel repair spares are never
   scanned into the assembly-line system
-- Input TDS captured for 8.5% of installs (15,484) — reflects real field data
-  collection, not a query gap
+- Input TDS available for 40.0% of installs (72,774 rows; was 8.5% / 15,484
+  from install audits alone). Source precedence: the installation-audit
+  reading where captured (15,469 installs), otherwise the smart machine's own
+  first daily average input TDS — `WATER_PURIFIERXMETRIC_DATE__DAILY__METRICS`
+  for M1 Pro / M2_UC / M3 / M3 Pro (46,646, joined via
+  `NATIVE_APPLIANCE__HOURLY__FACTS.APPLIANCE_ID`), and the older IoT platform
+  `IOT_DEVICEXMETRIC_DATE__HOURLY__METRICS` for M2 (10,622, matched by
+  customer, unambiguous matches only). M2 input logging began Mar 2026, so
+  older M2 machines use their first logged day. Device readings under 20 ppm
+  are treated as sensor faults. Non-smart M0/M1 machines have no sensor, so
+  they only have the audit reading. 476 of the 1,037 defect events now carry
+  a TDS band (was 190). Where both sources exist, band-level medians agree
+  (audit 451 vs device 441; 302 vs 350); individual readings differ ~20-30%
+  (hand pen vs built-in sensor). Build script: `~/uc-audit/portal_tds/build_portal_tds.py`
 - 679 of the 1,037 events trace to an identifiable spare barcode and appear
   in the row-level tab with that barcode; UC-attributed events show the
   machine barcode instead (labeled, not fabricated as a spare barcode)
@@ -69,7 +81,7 @@ Not yet in scope (would extend the same pipeline):
 - May 2026's production cohort has unusually low spare-barcode traceability
   (12% vs 85-99% every other month) — likely a scanning gap in that batch's
   workbook, not investigated further yet
-- TDS coverage (8.5%), input pressure (essentially uncaptured), and 39 spares
+- TDS coverage (40%, non-smart models audit-only), input pressure (essentially uncaptured), and 39 spares
   with implausibly long production-to-assembly gaps remain open, unexplained
   data-quality findings — not resolved, just disclosed
 
