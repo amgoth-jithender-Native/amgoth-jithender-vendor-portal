@@ -90,6 +90,18 @@ Not yet in scope (would extend the same pipeline):
   machines reach 18 months in Mar 2027). Script:
   `~/uc-audit/portal_tds/extend_cohort_12_24.py` (re-run with a fresh
   >365-day event pull to update)
+- Geography + TDS funnels 12–18m / 18–24m (2026-10-06): same rule as the
+  cohort funnel; a city / TDS band gets a value only if some of its machines
+  have been in use past 12 / 18 months, otherwise a dash. State view sums the
+  cities that have data. All 10 replacements at 366–376 days are counted
+  (geography and TDS count every event, the cohort only traceable first ones).
+- Row-level detail now has **Reason** and **Sub-reason** (the revisit ticket's
+  REASON / SUBREASON from `REQUEST__NATIVE_INSTALLATION_REVISIT__DAILY__FACTS`,
+  matched on install + revisit date; 177 of 1,037 have none recorded and show
+  "Not recorded"), plus a Reason filter. The 10 replacements beyond 365 days
+  are added as rows (tenure filter options 366–548 / 549–730 days), so the
+  table has 1,047 records while the warranty-year headline stays 1,037.
+  Script: `~/uc-audit/portal_tds/extend_geo_tds_rows.py` (+ `q3_membrane_events_reasons.sql`)
 - TDS coverage (40%, non-smart models audit-only), input pressure (essentially uncaptured), and 39 spares
   with implausibly long production-to-assembly gaps remain open, unexplained
   data-quality findings — not resolved, just disclosed
