@@ -81,6 +81,15 @@ Not yet in scope (would extend the same pipeline):
 - May 2026's production cohort has unusually low spare-barcode traceability
   (12% vs 85-99% every other month) — likely a scanning gap in that batch's
   workbook, not investigated further yet
+- Production cohort funnel 12–18m / 18–24m (added 2026-10-06): a production
+  month gets a value (defects ÷ total spares for that month) only if some of
+  its machines have already been in use past 12 / 18 months; otherwise the
+  cell shows a dash. Tenure counts from installation and installs start 15 Sep
+  2025, so as of 6 Oct 2026 only Apr–Aug 2025 cohorts show 12–18m (4 traceable
+  first replacements at 366–376 days), and 18–24m is a dash everywhere (first
+  machines reach 18 months in Mar 2027). Script:
+  `~/uc-audit/portal_tds/extend_cohort_12_24.py` (re-run with a fresh
+  >365-day event pull to update)
 - TDS coverage (40%, non-smart models audit-only), input pressure (essentially uncaptured), and 39 spares
   with implausibly long production-to-assembly gaps remain open, unexplained
   data-quality findings — not resolved, just disclosed
