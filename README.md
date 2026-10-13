@@ -8,7 +8,7 @@ water quality (TDS), and row-level spare records.
 
 ## Status
 
-**Real data wired in — scope: Ronch-assembled machines only.** Login now uses
+**Real data wired in — scope: Ronch-assembled and Amber-assembled machines.** Login now uses
 real Supabase authentication with role-based access (admin/team/vendor) — the
 hardcoded demo credential from the original prototype is gone. The numbers on
 every tab are computed from an actual join of UC's install/defect data against
@@ -71,8 +71,42 @@ the same disclosure.
 - No video/photo evidence field exists in the source data — the row-level
   tab's video column is honestly empty for all real rows, not fabricated
 
+**Amber added (2026-10-13):** same pipeline and sold-to logic as Ronch, mirrored
+onto Amber-assembled machines — first replacement per machine = **Amber**, any
+later replacement = **UC** (same repair-stock channel Ronch's UC-attributed
+events come from). Real, important differences from Ronch, disclosed rather
+than smoothed over:
+- **16,567 Amber installs** (vs 181,795 Ronch) — Amber only appears in UC's
+  install pipeline from **Jul–Aug 2026** (its production itself only started
+  ~Jun 2026 per the true-production log), so this is the full population to
+  date, not an artificially narrowed window.
+- **39 defect events, all first replacements, 0 second+** — Amber's cohort is
+  too new to have reached the later tenure buckets (6–12m, 12–18m, 18–24m)
+  that a meaningful share of Ronch's defects fall into. **Amber's defect rate
+  (0.24%) is not yet a fair comparison to Ronch's (0.53%)** — give it more
+  warranty-year runway before reading anything into the gap.
+- Machine/spare-barcode traceability for Amber comes from a **different
+  source**: a vendor-provided "Amber Scanning Data" sheet (Customer Serial No
+  = machine barcode, Finish Date = shared machine+spare test date, RO Membrane
+  SNo = spare barcode) — not the Snowflake scan-verified table Ronch uses,
+  since Amber isn't yet in that table under this barcode scheme in volume.
+- **Spare traceability is much lower for Amber: 15.4% vs Ronch's 73.7%** — a
+  real data-quality gap in the vendor's own sheet (RO Membrane SNo is recorded
+  for only ~26% of all Amber rows), not a join bug, and it varies sharply by
+  SKU (M2PRO ~41%, M1PRO ~12%, M0V1 ~0.5%).
+- **Zero TDS coverage for Amber** (no device-sensor enrichment pass has been
+  run for it yet, unlike Ronch's 40%) — this dilutes the combined TDS coverage
+  figure shown in the banner from 40.0% to 36.7%; disclosed, not hidden.
+- Jul 2026 shows 0 Amber membrane-traced installs and Aug 2026 only 6 (vs
+  1,398 in Jun and 1,143 in Sep) — a dip similar in shape to Ronch's May-2026
+  anomaly, confirmed real in the source sheet, not yet root-caused.
+- The Cohort tab's "Sold to" filter now genuinely splits Ronch vs Amber
+  production-month trends (`DATA.cohortRonch` / `DATA.cohortAmber`), not just
+  a label — Geography and TDS tabs remain combined-only (no per-manufacturer
+  split requested there).
+
 Not yet in scope (would extend the same pipeline):
-- Amber-assembled and UC-direct machines (Part 1 currently covers Ronch only)
+- UC-direct machines (sold straight to the end customer, no assembler)
 - Geography is by **city**, not state — UC's warehouse has no state-level
   dimension
 - Even the improved barcode source is a partial reconstruction of a more
