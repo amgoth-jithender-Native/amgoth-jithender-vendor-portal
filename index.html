@@ -127,6 +127,9 @@
     color:var(--ink-2); font-size:0.8rem; font-weight:700; cursor:pointer;
   }
   .btn-ghost:hover{ background:var(--surface-2); color:var(--ink); }
+  dialog.pw-dialog{ border:none; padding:0; background:transparent; color:inherit; max-width:calc(100% - 32px); }
+  dialog.pw-dialog::backdrop{ background:rgba(14,27,32,0.45); }
+  dialog.pw-dialog .login-card{ padding:28px 28px 22px; }
 
   .sample-banner{
     display:flex; align-items:center; gap:9px; padding:9px clamp(16px,3vw,32px);
@@ -356,9 +359,35 @@
       <div class="vendor-chip"><span class="dot"></span>Vontron · RO Membrane</div>
       <span class="role-chip" id="topbarRole" hidden></span>
       <span class="user-email" id="topbarEmail"></span>
+      <button class="btn-ghost" id="changePwBtn">Change password</button>
       <button class="btn-ghost" id="logoutBtn">Log out</button>
     </div>
   </header>
+
+  <dialog id="pwDialog" class="pw-dialog">
+    <div class="login-card">
+      <h1>Change password</h1>
+      <p class="sub">Enter your current password, then choose a new one.</p>
+      <div id="pwError" class="login-error" hidden><span>⚠</span><span id="pwErrorText"></span></div>
+      <div id="pwNotice" class="login-notice" hidden><span>✓</span><span>Password updated.</span></div>
+      <form id="pwForm">
+        <div class="field">
+          <label for="pwCurrent">Current password</label>
+          <input id="pwCurrent" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="pwNew">New password</label>
+          <input id="pwNew" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="field">
+          <label for="pwNew2">Confirm new password</label>
+          <input id="pwNew2" type="password" placeholder="Repeat new password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <button type="submit" class="btn-primary" id="pwSaveBtn">Update password</button>
+        <div class="back-row"><button type="button" class="link-btn" id="pwCancel">Cancel</button></div>
+      </form>
+    </div>
+  </dialog>
 
   <div class="sample-banner"><span class="pip"></span><span id="scopeBanner">Live figures — Ronch-assembled machines only, installs 15 Sep 2025 to 15 Sep 2026.</span></div>
 
@@ -525,6 +554,7 @@
   var PORTAL_VENDOR = "vontron"; // vendor whose data this page carries
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
   var currentRole = null;
+  var currentEmail = null;
   // Read the reset-email link's URL before the client consumes it
   var linkParams = new URLSearchParams(window.location.hash.slice(1));
   var cameFromRecovery = linkParams.get('type') === 'recovery';
@@ -606,6 +636,7 @@
         roleEl.textContent = ROLE_LABELS[res.data.role] || res.data.role;
         roleEl.hidden = false;
         currentRole = res.data.role;
+        currentEmail = session.user.email;
         return loadModeration().then(function(){
           initDashboard();
           applyRoleViews();
@@ -683,6 +714,51 @@
         return sb.auth.getSession().then(function(r){ return enterWithSession(r.data.session); });
       })
       .catch(function(err){ showLoginError('Could not update the password: ' + ((err && err.message) || 'unknown error')); })
+      .then(function(){ busy(btn, null); });
+  });
+
+  // ---------- Change password (signed in) ----------
+  var pwDialog = document.getElementById('pwDialog');
+  var pwForm = document.getElementById('pwForm');
+  var pwError = document.getElementById('pwError');
+  var pwNotice = document.getElementById('pwNotice');
+  function showPwError(msg){
+    pwNotice.hidden = true;
+    pwError.hidden = false;
+    document.getElementById('pwErrorText').textContent = msg;
+  }
+  document.getElementById('changePwBtn').addEventListener('click', function(){
+    pwForm.reset();
+    pwError.hidden = true;
+    pwNotice.hidden = true;
+    pwDialog.showModal();
+    document.getElementById('pwCurrent').focus();
+  });
+  document.getElementById('pwCancel').addEventListener('click', function(){ pwDialog.close(); });
+
+  pwForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var current = document.getElementById('pwCurrent').value;
+    var p1 = document.getElementById('pwNew').value;
+    var p2 = document.getElementById('pwNew2').value;
+    if(p1 !== p2){ showPwError('The two new passwords do not match.'); return; }
+    if(p1 === current){ showPwError('The new password must be different from the current one.'); return; }
+    var btn = document.getElementById('pwSaveBtn');
+    busy(btn, 'Updating…');
+    // Re-check the current password first, so an unattended session can't be used to take over the account
+    sb.auth.signInWithPassword({ email: currentEmail, password: current })
+      .then(function(res){
+        if(res.error) throw new Error(res.error.message === 'Invalid login credentials' ? 'The current password is incorrect.' : res.error.message);
+        return sb.auth.updateUser({ password: p1 });
+      })
+      .then(function(res){
+        if(res.error) throw res.error;
+        pwForm.reset();
+        pwError.hidden = true;
+        pwNotice.hidden = false;
+        setTimeout(function(){ pwDialog.close(); }, 1500);
+      })
+      .catch(function(err){ showPwError((err && err.message) || 'Could not update the password.'); })
       .then(function(){ busy(btn, null); });
   });
 
