@@ -130,6 +130,22 @@
   dialog.pw-dialog{ border:none; padding:0; background:transparent; color:inherit; max-width:calc(100% - 32px); }
   dialog.pw-dialog::backdrop{ background:rgba(14,27,32,0.45); }
   dialog.pw-dialog .login-card{ padding:28px 28px 22px; }
+  dialog.pw-dialog .access-card{ width:min(720px, 100%); max-height:85vh; overflow:auto; }
+  .access-list{ display:flex; flex-direction:column; gap:12px; }
+  .access-vendor{ border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; background:var(--surface-2); }
+  .access-vendor-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .access-vendor-head strong{ font-size:0.92rem; }
+  .access-logins{ font-size:0.74rem; color:var(--ink-muted); font-family:var(--font-mono); margin-top:3px; word-break:break-all; }
+  .access-tabs{ display:flex; gap:8px 16px; flex-wrap:wrap; margin:10px 0; }
+  .access-tabs label{ display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:600; cursor:pointer; }
+  .access-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .access-msg{ font-size:0.74rem; color:var(--ink-muted); }
+  .access-link{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px; font-size:0.8rem; }
+  .access-link input{ padding:6px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font:inherit; font-size:0.8rem; }
+  .access-section{ font-size:0.72rem; font-weight:700; color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px; }
+  .badge.st-none{ color:var(--ink-muted); background:var(--surface); border-color:var(--border); }
+  .preview-banner{ background:color-mix(in oklab, var(--accent) 16%, var(--surface)); }
+  .preview-banner .btn-ghost{ margin-left:auto; padding:4px 10px; }
 
   .sample-banner{
     display:flex; align-items:center; gap:9px; padding:9px clamp(16px,3vw,32px);
@@ -359,6 +375,7 @@
       <div class="vendor-chip"><span class="dot"></span>Vontron · RO Membrane</div>
       <span class="role-chip" id="topbarRole" hidden></span>
       <span class="user-email" id="topbarEmail"></span>
+      <button class="btn-ghost" id="accessBtn" hidden>Vendor access</button>
       <button class="btn-ghost" id="changePwBtn">Change password</button>
       <button class="btn-ghost" id="logoutBtn">Log out</button>
     </div>
@@ -388,6 +405,22 @@
       </form>
     </div>
   </dialog>
+
+  <dialog id="accessDialog" class="pw-dialog">
+    <div class="login-card access-card">
+      <h1>Vendor access</h1>
+      <p class="sub">Choose which tables each vendor sees after signing in. Vendors always see rates only, by state. Use Preview to see the portal exactly as that vendor will.</p>
+      <div id="accessError" class="login-error" hidden><span>⚠</span><span id="accessErrorText"></span></div>
+      <div id="accessList" class="access-list"></div>
+      <div class="back-row"><button type="button" class="link-btn" id="accessClose">Close</button></div>
+    </div>
+  </dialog>
+
+  <div class="sample-banner preview-banner" id="previewBanner" hidden>
+    <span class="pip" style="background:var(--accent)"></span>
+    <span id="previewText"></span>
+    <button class="btn-ghost" id="previewExit">Exit preview</button>
+  </div>
 
   <div class="sample-banner"><span class="pip"></span><span id="scopeBanner">Live figures — Ronch- and Amber-assembled machines.</span></div>
 
@@ -423,6 +456,8 @@
   </nav>
 
   <main>
+    <div class="card" id="noTabsNote" hidden><div class="table-note">No tables are assigned to this vendor yet. An admin can assign them under Vendor access.</div></div>
+
     <!-- FUNNEL 1: Install cohort (production-month axis retired 2026-10-15) -->
     <section class="panel" data-panel="cohort">
       <div class="stat-row" id="cohortStats"></div>
@@ -553,8 +588,12 @@
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE"; // Project Settings -> API Keys -> publishable (anon) key
   var PORTAL_VENDOR = "vontron"; // vendor whose data this page carries
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
+  var TAB_LABELS = { cohort:'Install Cohort', geo:'Geography', tds:'Water Quality (TDS)', rows:'Row-Level Detail' };
+  var ALL_TABS = Object.keys(TAB_LABELS);
   var currentRole = null;
   var currentEmail = null;
+  var viewTabs = ALL_TABS;   // tables the current viewer may open (vendor_access.tabs for vendors)
+  var previewVendor = null;  // admin's "view as vendor" preview: { key, name }
   // Read the reset-email link's URL before the client consumes it
   var linkParams = new URLSearchParams(window.location.hash.slice(1));
   var cameFromRecovery = linkParams.get('type') === 'recovery';
@@ -616,27 +655,54 @@
   function accessProblem(profile){
     if(!profile) return 'Your account has no profile yet. Ask an admin to set it up.';
     if(profile.role === 'admin' || profile.role === 'team_management') return null;
-    if(profile.role === 'vendor' && (profile.vendor_name || '').trim().toLowerCase() === PORTAL_VENDOR) return null;
-    return 'Your account is not linked to this vendor yet. Ask an admin to assign it.';
+    var vendor = vendorKey(profile.vendor_name);
+    if(profile.role !== 'vendor' || !vendor) return 'Your account is not linked to a vendor yet. Ask an admin to assign it.';
+    if(vendor !== PORTAL_VENDOR) return 'Your dashboard is being set up: data for your components is not on the portal yet. We will let you know when it is ready.';
+    return null;
+  }
+  function vendorKey(name){ return (name || '').trim().toLowerCase(); }
+
+  // Tables a vendor may open. Until 003_vendor_access.sql is run, the table is missing and
+  // the portal vendor keeps every table, as before.
+  function loadVendorTabs(vendor){
+    return sb.from('vendor_access').select('tabs').eq('vendor_name', vendor).maybeSingle().then(function(res){
+      if(res.error){
+        if(res.error.code === 'PGRST205' || res.error.code === '42P01') return ALL_TABS;
+        throw res.error;
+      }
+      return (res.data && res.data.tabs) || [];
+    });
   }
 
   function enterWithSession(session){
+    var profile;
     return sb.from('profiles').select('email, full_name, role, vendor_name').eq('id', session.user.id).maybeSingle()
       .then(function(res){
         if(res.error) throw res.error;
-        var problem = accessProblem(res.data);
+        profile = res.data;
+        var problem = accessProblem(profile);
+        if(problem || profile.role !== 'vendor') return problem;
+        return loadVendorTabs(vendorKey(profile.vendor_name)).then(function(tabs){
+          viewTabs = ALL_TABS.filter(function(t){ return tabs.indexOf(t) >= 0; });
+          return viewTabs.length ? null : 'No dashboard tables have been assigned to your account yet. Ask an admin.';
+        });
+      })
+      .then(function(problem){
         if(problem){
           return sb.auth.signOut().then(function(){ showLogin(); showLoginError(problem); });
         }
+        if(profile.role !== 'vendor') viewTabs = ALL_TABS;
+        previewVendor = null;
         loginError.hidden = true;
         loginScreen.hidden = true;
         appEl.hidden = false;
-        document.getElementById('topbarEmail').textContent = res.data.full_name || res.data.email;
+        document.getElementById('topbarEmail').textContent = profile.full_name || profile.email;
         var roleEl = document.getElementById('topbarRole');
-        roleEl.textContent = ROLE_LABELS[res.data.role] || res.data.role;
+        roleEl.textContent = ROLE_LABELS[profile.role] || profile.role;
         roleEl.hidden = false;
-        currentRole = res.data.role;
+        currentRole = profile.role;
         currentEmail = session.user.email;
+        document.getElementById('accessBtn').hidden = currentRole !== 'admin';
         return loadModeration().then(function(){
           initDashboard();
           applyRoleViews();
@@ -762,6 +828,144 @@
       .then(function(){ busy(btn, null); });
   });
 
+  // ---------- Vendor access (admin) ----------
+  // Vendors are the distinct profiles.vendor_name values of vendor accounts; their tables live in vendor_access.
+  var accessDialog = document.getElementById('accessDialog');
+  var accessList = document.getElementById('accessList');
+  var accessError = document.getElementById('accessError');
+  function showAccessError(msg){
+    accessError.hidden = false;
+    document.getElementById('accessErrorText').textContent = msg;
+  }
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(text != null) e.textContent = text;
+    return e;
+  }
+
+  function loadAccess(){
+    accessError.hidden = true;
+    accessList.innerHTML = '';
+    accessList.appendChild(el('div', 'access-msg', 'Loading vendors…'));
+    return Promise.all([
+      sb.from('profiles').select('id, email, vendor_name').eq('role', 'vendor').order('email'),
+      sb.from('vendor_access').select('vendor_name, tabs')
+    ]).then(function(r){
+      if(r[0].error) throw r[0].error;
+      if(r[1].error) throw new Error(r[1].error.code === 'PGRST205' || r[1].error.code === '42P01'
+        ? 'The vendor_access table does not exist yet. Run supabase/migrations/003_vendor_access.sql in the Supabase SQL Editor.'
+        : r[1].error.message);
+      var saved = {};
+      r[1].data.forEach(function(a){ saved[a.vendor_name] = a.tabs || []; });
+      var vendors = {}, unlinked = [];
+      r[0].data.forEach(function(p){
+        var key = vendorKey(p.vendor_name);
+        if(!key){ unlinked.push(p); return; }
+        vendors[key] = vendors[key] || { key: key, name: p.vendor_name.trim(), emails: [] };
+        vendors[key].emails.push(p.email);
+      });
+      Object.keys(saved).forEach(function(key){
+        vendors[key] = vendors[key] || { key: key, name: key, emails: [] };
+      });
+      renderAccess(Object.keys(vendors).sort().map(function(k){ vendors[k].tabs = saved[k] || []; return vendors[k]; }), unlinked);
+    }).catch(function(err){
+      accessList.innerHTML = '';
+      showAccessError((err && err.message) || 'Could not load vendors.');
+    });
+  }
+
+  function renderAccess(vendors, unlinked){
+    accessList.innerHTML = '';
+    if(!vendors.length) accessList.appendChild(el('div', 'access-msg', 'No vendor accounts yet.'));
+    vendors.forEach(function(v){
+      var hasData = v.key === PORTAL_VENDOR;
+      var card = el('div', 'access-vendor');
+      var head = el('div', 'access-vendor-head');
+      var who = el('div');
+      who.appendChild(el('strong', null, v.name));
+      who.appendChild(el('div', 'access-logins', v.emails.length ? v.emails.join(', ') : 'No logins linked'));
+      head.appendChild(who);
+      head.appendChild(el('span', 'badge status ' + (hasData ? 'st-good' : 'st-none'),
+        hasData ? 'Data on portal · RO Membrane' : 'No data on portal yet'));
+      card.appendChild(head);
+
+      var tabsRow = el('div', 'access-tabs');
+      var boxes = ALL_TABS.map(function(t){
+        var label = el('label');
+        var box = el('input'); box.type = 'checkbox'; box.value = t; box.checked = v.tabs.indexOf(t) >= 0;
+        label.appendChild(box); label.appendChild(document.createTextNode(TAB_LABELS[t]));
+        tabsRow.appendChild(label);
+        return box;
+      });
+      card.appendChild(tabsRow);
+
+      var actions = el('div', 'access-actions');
+      var saveBtn = el('button', 'btn-ghost', 'Save');
+      var previewBtn = el('button', 'btn-ghost', 'Preview as ' + v.name);
+      var msg = el('span', 'access-msg', hasData ? '' : 'Vendor can’t sign in until their data is added to the portal.');
+      previewBtn.disabled = !hasData;
+      actions.appendChild(saveBtn); actions.appendChild(previewBtn); actions.appendChild(msg);
+      card.appendChild(actions);
+      function checked(){ return boxes.filter(function(b){ return b.checked; }).map(function(b){ return b.value; }); }
+
+      saveBtn.addEventListener('click', function(){
+        busy(saveBtn, 'Saving…'); msg.textContent = '';
+        sb.from('vendor_access').upsert({ vendor_name: v.key, tabs: checked() }).then(function(res){
+          if(res.error) throw res.error;
+          v.tabs = checked();
+          msg.textContent = 'Saved. Applies at the vendor’s next sign-in.';
+        }).catch(function(err){ msg.textContent = 'Could not save: ' + ((err && err.message) || err); })
+          .then(function(){ busy(saveBtn, null); });
+      });
+      // Preview uses the boxes as ticked now, saved or not
+      previewBtn.addEventListener('click', function(){
+        previewVendor = { key: v.key, name: v.name };
+        viewTabs = checked();
+        accessDialog.close();
+        applyRoleViews();
+      });
+      accessList.appendChild(card);
+    });
+
+    if(!unlinked.length) return;
+    accessList.appendChild(el('div', 'access-section', 'Vendor logins not linked to a vendor'));
+    unlinked.forEach(function(p){
+      var card = el('div', 'access-vendor');
+      card.appendChild(el('div', 'access-logins', p.email));
+      var row = el('div', 'access-link');
+      var input = el('input'); input.placeholder = 'Vendor name, e.g. Vontron';
+      var linkBtn = el('button', 'btn-ghost', 'Link');
+      var msg = el('span', 'access-msg');
+      row.appendChild(input); row.appendChild(linkBtn); row.appendChild(msg);
+      card.appendChild(row);
+      linkBtn.addEventListener('click', function(){
+        var name = input.value.trim();
+        if(!name){ msg.textContent = 'Enter a vendor name.'; return; }
+        busy(linkBtn, 'Linking…');
+        sb.from('profiles').update({ vendor_name: name }).eq('id', p.id).then(function(res){
+          if(res.error) throw res.error;
+          return loadAccess();
+        }).catch(function(err){
+          busy(linkBtn, null);
+          msg.textContent = 'Could not link: ' + ((err && err.message) || err);
+        });
+      });
+      accessList.appendChild(card);
+    });
+  }
+
+  document.getElementById('accessBtn').addEventListener('click', function(){
+    accessDialog.showModal();
+    loadAccess();
+  });
+  document.getElementById('accessClose').addEventListener('click', function(){ accessDialog.close(); });
+  document.getElementById('previewExit').addEventListener('click', function(){
+    previewVendor = null;
+    viewTabs = ALL_TABS;
+    applyRoleViews();
+  });
+
   function showResetForm(){
     appEl.hidden = true;
     loginScreen.hidden = false;
@@ -785,6 +989,21 @@
     });
   });
 
+  // Show only the tables in viewTabs; keep the open one if still allowed
+  function applyTabs(){
+    var active = document.querySelector('.tab-btn.active');
+    tabButtons.forEach(function(b){ b.hidden = viewTabs.indexOf(b.getAttribute('data-tab')) < 0; });
+    document.getElementById('tabs').hidden = !viewTabs.length;
+    document.getElementById('noTabsNote').hidden = viewTabs.length > 0;
+    if(!viewTabs.length){
+      document.querySelectorAll('.panel').forEach(function(p){ p.hidden = true; });
+      return;
+    }
+    if(!active || active.hidden || document.querySelectorAll('.panel:not([hidden])').length === 0){
+      document.querySelector('.tab-btn[data-tab="' + viewTabs[0] + '"]').click();
+    }
+  }
+
   // ---------- Helpers ----------
   function pct(n, d){ return d > 0 ? (n / d * 100) : 0; }
   function fmt1(n){ return n.toFixed(1); }
@@ -797,7 +1016,9 @@
     return 'var(--' + steps[idx] + ')';
   }
 
-  function pctOnly(){ return currentRole === 'vendor'; }
+  // A vendor, or an admin previewing as one
+  function viewingAsVendor(){ return currentRole === 'vendor' || !!previewVendor; }
+  function pctOnly(){ return viewingAsVendor(); }
 
   function metricCell(count, denom, mode, maxRate){
     if(pctOnly()) mode = 'pct';
@@ -975,7 +1196,11 @@
 
   // Only admins may switch to the city breakdown; everyone else sees states
   function applyRoleViews(){
-    var canSeeCities = currentRole === 'admin';
+    var canSeeCities = currentRole === 'admin' && !previewVendor;
+    applyTabs();
+    document.getElementById('previewBanner').hidden = !previewVendor;
+    if(previewVendor) document.getElementById('previewText').textContent = 'Previewing as ' + previewVendor.name + ': ' +
+      (viewTabs.length ? viewTabs.map(function(t){ return TAB_LABELS[t]; }).join(', ') : 'no tables assigned');
     document.body.classList.toggle('pct-only', pctOnly());
     document.getElementById('geoLevel').hidden = !canSeeCities;
     if(!canSeeCities) setGeoLevel('state');
@@ -1262,7 +1487,7 @@
   function clipsFor(r){
     var map = window.MW_VIDEO_PROOF || {};
     var all = (r.machine_barcode && map[r.machine_barcode]) || [];
-    var staff = currentRole === 'admin' || currentRole === 'team_management';
+    var staff = !viewingAsVendor();
     return all.filter(function(c){
       var st = moderation[c.url];
       return st !== 'deleted' && (st !== 'hidden' || staff);
@@ -1294,7 +1519,7 @@
     var meta = document.createElement('div'); meta.className = 'clip-meta';
     var hiddenTag = document.createElement('span'); hiddenTag.className = 'clip-hidden-tag'; hiddenTag.textContent = 'Hidden from vendors';
     head.insertBefore(hiddenTag, close);
-    var admin = currentRole === 'admin' ? document.createElement('div') : null;
+    var admin = currentRole === 'admin' && !previewVendor ? document.createElement('div') : null;
     var current = null;
     function show(c){
       current = c;
