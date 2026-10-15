@@ -41,10 +41,10 @@ system, not a tab added to `index.html`.
   live-queried, unlike the main portal. Re-run the debit-note build and
   re-extract into this page to refresh it.
 - **A second Ronch surface also exists**: `index.html` itself now has an
-  integrated Ronch dashboard (Debit Note, Components, Production Cohort, By
+  integrated Ronch dashboard (Debit Note, Components, Install Cohort, By
   Model, Revisit Detail tabs) that a Ronch/Siddharth login lands on directly,
   built by a parallel session the same day. `ronch-data.js` is generated
-  *from* this page's `DEBIT_DATA` via `scripts/build-ronch-data.py` — re-run
+  *from* this page's `DEBIT_DATA` via `scripts/build-debit-data.py` — re-run
   it (or tell that session) if `DEBIT_DATA`'s structure or `revisit_header`
   columns ever change here. Which of the two surfaces Siddharth should
   actually use is still an open question for the user to decide.
@@ -170,7 +170,7 @@ Ronch's September-2026 warranty debit note. The Ronch login (vendor_name `Ronch`
 the note) both filter five tables: Debit Note, Components, Install Cohort, By
 Model and Revisit Detail. The data lives in `ronch-data.js`, loaded only when the
 Ronch dashboard opens, and is rebuilt from `debit-note-ronch.html` with
-`python3 scripts/build-ronch-data.py`. Everything is grouped by the machine's
+`python3 scripts/build-debit-data.py`. Everything is grouped by the machine's
 **installation month/quarter**, not production month. That counts every chargeable
 line: Rs 21,24,116.00, versus the issued note's Rs 21,07,235.34, which grouped by
 production quarter and so dropped 26 chargeable lines (Rs 16,880.66) built before
@@ -178,6 +178,15 @@ Q3-25 or with an unreadable build date. Install-time spare replacement
 (Rs 49,079.46) has no revisit rows and sits in the revisit month's quarter (Q3-26). Run
 `supabase/migrations/004_ronch_tabs.sql` so these tables can be assigned in
 Vendor access.
+
+**Amber dashboard (warranty debit note).** The same five tables for Amber-assembled
+machines, for the Amber login (vendor_name `Keshav`, or `Amber`). A *Period*
+dropdown picks revisits through 31 Aug 2026, September 2026, or both. Amber's
+single 30-day window makes every line chargeable, so tenure is split by days
+(≤3d / 4–7d / 8–15d / 16–30d). The data is `amber-data.js`, built from
+`debit-note-amber.html` by the same script; each period reconciles exactly to the
+note (Rs 7,21,828.36 through Aug, Rs 4,41,819.12 in Sep). Run
+`supabase/migrations/005_amber_tabs.sql` to give the Keshav login its tables.
 
 **Cross-validated against true production records (2026-09-30):** every
 number below has now been checked against Ronch's own production log (a

@@ -431,7 +431,7 @@
     <span class="pip" style="background:var(--accent)"></span>
     <span id="coverageSummary">Loading production coverage…</span>
   </div>
-  <div class="sample-banner" data-dataset="ronch" hidden><span class="pip"></span><span id="ronchBanner"></span></div>
+  <div class="sample-banner" data-kind="debit" hidden><span class="pip"></span><span id="debitBanner"></span></div>
   <div id="coverageDetail" hidden style="padding:12px clamp(16px,3vw,32px); background:var(--surface-2); border-bottom:1px solid var(--border); font-size:0.78rem; color:var(--ink-2); line-height:1.6;"></div>
 
   <div class="controls-row">
@@ -440,7 +440,12 @@
       <select id="vendorSel" class="pill-select">
         <option value="vontron">Vontron · RO Membrane</option>
         <option value="ronch">Ronch · Warranty debit note</option>
+        <option value="amber">Amber · Warranty debit note</option>
       </select>
+    </div>
+    <div class="control" id="periodControl" hidden>
+      <label for="periodSel">Period</label>
+      <select id="periodSel" class="pill-select"></select>
     </div>
     <div class="control">
       <label for="defectType">Defect type</label>
@@ -464,11 +469,11 @@
     <button class="tab-btn" data-dataset="vontron" data-tab="geo"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13.5s5-4.4 5-8.1a5 5 0 10-10 0c0 3.7 5 8.1 5 8.1z" stroke="currentColor" stroke-width="1.4"/><circle cx="7.5" cy="5.4" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>Geography</button>
     <button class="tab-btn" data-dataset="vontron" data-tab="tds"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5s3.7 4.7 3.7 7.5a3.7 3.7 0 11-7.4 0c0-2.8 3.7-7.5 3.7-7.5z" stroke="currentColor" stroke-width="1.4"/></svg>Water Quality (TDS)</button>
     <button class="tab-btn" data-dataset="vontron" data-tab="rows"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Row-Level Detail</button>
-    <button class="tab-btn" data-dataset="ronch" data-tab="r_summary" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.5" y="1.5" width="10" height="12" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Debit Note</button>
-    <button class="tab-btn" data-dataset="ronch" data-tab="r_components" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 3.5h12M1.5 7.5h8M1.5 11.5h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Components</button>
-    <button class="tab-btn" data-dataset="ronch" data-tab="r_cohort" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Install Cohort</button>
-    <button class="tab-btn" data-dataset="ronch" data-tab="r_sku" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>By Model</button>
-    <button class="tab-btn" data-dataset="ronch" data-tab="r_rows" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Revisit Detail</button>
+    <button class="tab-btn" data-kind="debit" data-tab="r_summary" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.5" y="1.5" width="10" height="12" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Debit Note</button>
+    <button class="tab-btn" data-kind="debit" data-tab="r_components" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 3.5h12M1.5 7.5h8M1.5 11.5h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Components</button>
+    <button class="tab-btn" data-kind="debit" data-tab="r_cohort" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Install Cohort</button>
+    <button class="tab-btn" data-kind="debit" data-tab="r_sku" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>By Model</button>
+    <button class="tab-btn" data-kind="debit" data-tab="r_rows" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Revisit Detail</button>
   </nav>
 
   <main>
@@ -590,7 +595,7 @@
       </div>
     </section>
 
-    <!-- RONCH: warranty debit note (data in ronch-data.js, built from debit-note-ronch.html) -->
+    <!-- DEBIT NOTES: Ronch and Amber (data in <vendor>-data.js, built from debit-note-<vendor>.html) -->
     <section class="panel" data-panel="r_summary" hidden>
       <div class="stat-row" id="rSummaryStats"></div>
       <div class="card">
@@ -599,7 +604,7 @@
           <div class="seg" id="rSvcSeg"><button class="active" data-svc="with">With service</button><button data-svc="without">Without service</button></div>
         </div>
         <div class="table-wrap"><table id="rNoteTable"><thead></thead><tbody></tbody></table></div>
-        <div class="table-note">The whole note, all components, chargeable lines grouped by the machine's installation quarter. Part cost is priced by the revisit month. Service cost is Rs 500 per visit, charged once per visit. Install-time spare replacement happened at installs during the revisit month, so it sits in that quarter.</div>
+        <div class="table-note">The whole note, all components, chargeable lines grouped by the machine's installation quarter. Part cost is priced by the revisit month. Service cost is Rs 500 per visit, charged once per visit. Install-time spare replacement is billed at part cost only, with no service cost.</div>
       </div>
       <div class="card">
         <div class="card-head"><h2 id="rSelTitle">This selection, by installation quarter</h2><span class="hint">Chargeable lines only (within the warranty window)</span></div>
@@ -617,7 +622,7 @@
             <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
-        <div class="table-note">% = line items ÷ machines with at least one September-2026 revisit; a revisit that replaces two parts counts toward both. Debit covers chargeable lines (within the warranty window).</div>
+        <div class="table-note">% = line items ÷ machines revisited in the selected period; a revisit that replaces two parts counts toward both. Debit covers chargeable lines (within the warranty window).</div>
       </div>
     </section>
 
@@ -666,7 +671,7 @@
         <span class="rowcount" id="rRowCount"></span>
       </div>
       <div class="card">
-        <div class="card-head"><h2>Revisit lines</h2><span class="hint">One row per invoiced part or non-spare issue on a September-2026 revisit</span></div>
+        <div class="card-head"><h2>Revisit lines</h2><span class="hint">One row per invoiced part or non-spare issue on a revisit</span></div>
         <div class="table-wrap" style="max-height:620px; overflow-y:auto;">
           <table id="rRowsTable"><thead></thead><tbody></tbody></table>
         </div>
@@ -686,11 +691,15 @@
   var SUPABASE_URL = "https://cawycwllhekdvaimurar.supabase.co";
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE"; // Project Settings -> API Keys -> publishable (anon) key
   // Vendors whose data this page carries: vendor_name (lower-cased) -> dataset.
-  // 'siddharth' is the interim vendor_name of the Ronch login (same as debit-note-ronch.html).
-  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch' };
+  // 'siddharth' and 'keshav' are the vendor_names of the Ronch and Amber logins (same as their debit-note pages).
+  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch', amber:'amber', keshav:'amber' };
+  var DEBIT_TABS = ['r_summary','r_components','r_cohort','r_sku','r_rows'];
   var DATASETS = {
-    vontron: { chip:'Vontron · RO Membrane', status:'Data on portal · RO Membrane', tabs:['cohort','geo','tds','rows'] },
-    ronch:   { chip:'Ronch · Warranty Debit Note', status:'Data on portal · Sept-26 debit note', tabs:['r_summary','r_components','r_cohort','r_sku','r_rows'] }
+    vontron: { kind:'funnel', chip:'Vontron · RO Membrane', status:'Data on portal · RO Membrane', tabs:['cohort','geo','tds','rows'] },
+    ronch:   { kind:'debit', chip:'Ronch · Warranty Debit Note', status:'Data on portal · Sept-26 debit note', tabs:DEBIT_TABS,
+               footer:'Membrane Watch · Ronch warranty debit note · Urban Company — revisits in September 2026, any installation date; figures grouped by installation month. Part-cost gaps are disclosed in the debit note, not hidden.' },
+    amber:   { kind:'debit', chip:'Amber · Warranty Debit Note', status:'Data on portal · Jun–Sep-26 debit note', tabs:DEBIT_TABS,
+               footer:'Membrane Watch · Amber warranty debit note · Urban Company — Amber-assembled machines, revisits June–September 2026; figures grouped by installation month. Part-cost gaps are disclosed in the debit note, not hidden.' }
   };
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
   var TAB_LABELS = { cohort:'Install Cohort', geo:'Geography', tds:'Water Quality (TDS)', rows:'Row-Level Detail',
@@ -1084,23 +1093,23 @@
   });
 
   // ---------- Datasets ----------
-  // Ronch's data is a separate file, fetched only when someone opens the Ronch dashboard
-  var ronchLoad = null;
+  // A debit-note vendor's data is a separate file, fetched only when someone opens that dashboard
+  var debitLoads = {};
   function loadDataset(name){
-    if(name !== 'ronch' || window.MW_RONCH) return Promise.resolve();
-    if(!ronchLoad) ronchLoad = new Promise(function(resolve, reject){
+    if(DATASETS[name].kind !== 'debit' || (window.MW_DEBIT && window.MW_DEBIT[name])) return Promise.resolve();
+    if(!debitLoads[name]) debitLoads[name] = new Promise(function(resolve, reject){
       var tag = document.createElement('script');
-      tag.src = 'ronch-data.js';
+      tag.src = name + '-data.js';
       tag.onload = resolve;
-      tag.onerror = function(){ ronchLoad = null; reject(new Error('Could not load the Ronch data file. Reload the page to try again.')); };
+      tag.onerror = function(){ delete debitLoads[name]; reject(new Error('Could not load the ' + DATASETS[name].chip + ' data file. Reload the page to try again.')); };
       document.head.appendChild(tag);
     });
-    return ronchLoad;
+    return debitLoads[name];
   }
   function showDataset(name){
     currentDataset = name;
     return loadDataset(name).catch(function(err){
-      document.getElementById('ronchBanner').textContent = err.message;
+      document.getElementById('debitBanner').textContent = err.message;
     }).then(applyRoleViews);
   }
   document.getElementById('vendorSel').addEventListener('change', function(){ showDataset(this.value); });
@@ -1110,11 +1119,12 @@
     document.querySelectorAll('[data-dataset]:not(.tab-btn)').forEach(function(e){
       e.hidden = e.getAttribute('data-dataset') !== currentDataset;
     });
+    document.querySelectorAll('[data-kind]:not(.tab-btn)').forEach(function(e){
+      e.hidden = e.getAttribute('data-kind') !== DATASETS[currentDataset].kind;
+    });
     if(currentDataset !== 'vontron') document.getElementById('coverageDetail').hidden = true;
     document.querySelector('.vendor-chip').lastChild.textContent = DATASETS[currentDataset].chip;
-    document.getElementById('pageFooter').textContent = currentDataset === 'ronch'
-      ? 'Membrane Watch · Ronch warranty debit note · Urban Company — revisits in September 2026, any installation date; figures grouped by installation month. Part-cost gaps are disclosed in the debit note, not hidden.'
-      : vontronFooter;
+    document.getElementById('pageFooter').textContent = DATASETS[currentDataset].footer || vontronFooter;
     applyControls();
   }
 
@@ -1356,7 +1366,7 @@
     document.getElementById('previewBanner').hidden = !previewVendor;
     if(previewVendor) document.getElementById('previewText').textContent = 'Previewing as ' + previewVendor.name + ': ' +
       (viewTabs.length ? viewTabs.map(function(t){ return TAB_LABELS[t]; }).join(', ') : 'no tables assigned');
-    if(currentDataset === 'ronch') renderRonch();
+    renderDebit();
     document.body.classList.toggle('pct-only', pctOnly());
     document.getElementById('geoLevel').hidden = !canSeeCities;
     if(!canSeeCities) setGeoLevel('state');
@@ -1834,15 +1844,15 @@
     }
   }
 
-  // ---------- Ronch: warranty debit note ----------
-  // Rows come from ronch-data.js (scripts/build-ronch-data.py, built from debit-note-ronch.html).
-  // One row per invoiced part or non-spare issue on a September-2026 revisit.
-  var R = null;
-  var RC = {}; // column name -> index
-  var rState = { type:'spare', comp:'', svc:'with', r_cohort:'abs', r_sku:'abs',
+  // ---------- Debit-note dashboards (Ronch, Amber) ----------
+  // Each vendor's rows come from <vendor>-data.js (scripts/build-debit-data.py, built from
+  // debit-note-<vendor>.html): one row per invoiced part or non-spare issue on a revisit.
+  var DEBIT = null;     // window.MW_DEBIT[name] for the debit-note dataset on screen
+  var debitName = null;
+  var RC = {};          // column name -> index
+  var rState = { type:'spare', comp:'', period:'', svc:'with', r_cohort:'abs', r_sku:'abs',
     rows:{ barcode:'', sku:'', install:'', within:'', l1:'' } };
-  var TENURE_MAX = [30, 60, 180, 365, Infinity]; // ≤1m, 1–2m, 2–6m, 6–12m, 12m+ (days from install)
-  var RONCH_ROW_LIMIT = 500;
+  var DEBIT_ROW_LIMIT = 500;
   var vontronControls = null; // Vontron's dropdown options, restored when switching back
 
   function rv(r, c){ return r[RC[c]]; }
@@ -1850,13 +1860,32 @@
   function rBilled(r){ return rv(r, 'within') === 1; }
   function rQuarter(month){ return 'Q' + (Math.floor((+month.slice(5, 7) - 1) / 3) + 1) + '-' + month.slice(2, 4); }
   function rDebit(r){ return rBilled(r) ? rv(r, 'part') + rv(r, 'svc') : 0; }
-  function rTenureIdx(days){ for(var i = 0; i < TENURE_MAX.length; i++){ if(days <= TENURE_MAX[i]) return i; } return TENURE_MAX.length - 1; }
+  function rTenureIdx(days){
+    var b = DEBIT.meta.tenure_buckets;
+    for(var i = 0; i < b.length; i++){ if(b[i][1] == null || days <= b[i][1]) return i; }
+    return b.length - 1;
+  }
   function fmtRs(n, dp){ return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 }); }
+  function rPeriodRows(){ return DEBIT.rows.filter(function(r){ return !rState.period || rv(r, 'period') === rState.period; }); }
   function rSelected(){
-    return R.rows.filter(function(r){ return rv(r, 'type') === rState.type && (!rState.comp || rv(r, 'component') === rState.comp); });
+    return rPeriodRows().filter(function(r){ return rv(r, 'type') === rState.type && (!rState.comp || rv(r, 'component') === rState.comp); });
+  }
+  function rPeriods(){ return DEBIT.periods.filter(function(p){ return !rState.period || p.key === rState.period; }); }
+  function rCohortSize(){
+    var ps = rPeriods();
+    return ps.length === 1 ? ps[0].cohort_size : DEBIT.meta.all_cohort_size;
+  }
+  function rPeriodLabel(){ var ps = rPeriods(); return ps.length === 1 ? ps[0].label : 'All periods'; }
+  // The note's summary table for the chosen period(s); periods share quarter columns, so they add up cell by cell
+  function rNote(kind){
+    var ps = rPeriods(), first = ps[0][kind];
+    if(ps.length === 1) return first;
+    return { header: first.header, rows: first.rows.map(function(row, ri){
+      return row.map(function(v, ci){ return ci === 0 ? v : ps.reduce(function(a, p){ return a + p[kind].rows[ri][ci]; }, 0); });
+    }) };
   }
   function rSelectionLabel(){ return (rState.type === 'spare' ? 'Spare' : 'Non-spare') + ' · ' + (rState.comp || 'all components'); }
-  function rCell(text, cls){ var td = el('td', cls || 'tnum', text); return td; }
+  function rCell(text, cls){ return el('td', cls || 'tnum', text); }
   function rHeat(value, max, text){
     var td = el('td', 'metric tnum');
     var span = el('span', 'cellwrap', text);
@@ -1864,35 +1893,69 @@
     td.appendChild(span);
     return td;
   }
-  function rFillSelect(id, values, label){
+  function rFillSelect(id, values){
     var sel = document.getElementById(id);
-    values.forEach(function(v){ var o = el('option', null, label ? label(v) : v); o.value = v; sel.appendChild(o); });
+    while(sel.options.length > 1) sel.remove(1);
+    sel.value = '';
+    values.forEach(function(v){ var o = el('option', null, v); o.value = v; sel.appendChild(o); });
   }
   function rDistinct(col){
     var seen = {};
-    R.rows.forEach(function(r){ var v = rv(r, col); if(v != null && v !== '') seen[v] = true; });
+    DEBIT.rows.forEach(function(r){ var v = rv(r, col); if(v != null && v !== '') seen[v] = true; });
     return Object.keys(seen).sort();
   }
 
-  function rInit(){
-    if(R || !window.MW_RONCH) return;
-    R = window.MW_RONCH;
-    R.cols.forEach(function(c, i){ RC[c] = i; });
+  // Point the debit-note tables at another vendor's data, resetting its filters
+  function rUse(name){
+    if(debitName === name) return;
+    debitName = name;
+    DEBIT = window.MW_DEBIT[name];
+    RC = {};
+    DEBIT.cols.forEach(function(c, i){ RC[c] = i; });
+    rState.comp = ''; rState.period = '';
+    rState.rows = { barcode:'', sku:'', install:'', within:'', l1:'' };
+    document.getElementById('rfBarcode').value = '';
+    document.getElementById('rfWithin').value = '';
     var skus = rDistinct('sku');
     rFillSelect('rCohortSku', skus);
     rFillSelect('rfSku', skus);
     rFillSelect('rfInstall', rDistinct('install_month').reverse());
     rFillSelect('rfL1', rDistinct('l1'));
-    document.getElementById('rCohortSku').addEventListener('change', renderRonchCohort);
-    document.getElementById('rfBarcode').addEventListener('input', function(){ rState.rows.barcode = this.value.trim().toUpperCase(); renderRonchRows(); });
+    var periodSel = document.getElementById('periodSel');
+    periodSel.innerHTML = '';
+    if(DEBIT.periods.length > 1){
+      var all = el('option', null, 'All periods'); all.value = ''; periodSel.appendChild(all);
+    }
+    DEBIT.periods.forEach(function(p){ var o = el('option', null, p.label); o.value = p.key; periodSel.appendChild(o); });
+    periodSel.value = '';
+    // Tenure buckets differ by vendor (Ronch in months, Amber's 30-day window in days)
+    var heads = DEBIT.meta.tenure_buckets.map(function(b){ return b[0]; });
+    [['rCohortTable', 'Install month'], ['rSkuTable', 'Model']].forEach(function(t){
+      var tr = document.querySelector('#' + t[0] + ' thead tr');
+      tr.innerHTML = '';
+      [t[1]].concat(heads, ['Total', 'Chargeable', 'Debit']).forEach(function(h){ tr.appendChild(el('th', null, h)); });
+    });
+  }
+
+  var debitWired = false;
+  function rWire(){
+    if(debitWired) return;
+    debitWired = true;
+    document.getElementById('rCohortSku').addEventListener('change', renderDebitCohort);
+    document.getElementById('rfBarcode').addEventListener('input', function(){ rState.rows.barcode = this.value.trim().toUpperCase(); renderDebitRows(); });
     [['rfSku','sku'], ['rfInstall','install'], ['rfWithin','within'], ['rfL1','l1']].forEach(function(f){
-      document.getElementById(f[0]).addEventListener('change', function(){ rState.rows[f[1]] = this.value; renderRonchRows(); });
+      document.getElementById(f[0]).addEventListener('change', function(){ rState.rows[f[1]] = this.value; renderDebitRows(); });
+    });
+    document.getElementById('periodSel').addEventListener('change', function(){
+      rState.period = this.value;
+      rFillComponents();
+      renderDebit();
     });
     document.querySelectorAll('#rSvcSeg button').forEach(function(btn){
       btn.addEventListener('click', function(){
         document.querySelectorAll('#rSvcSeg button').forEach(function(b){ b.classList.toggle('active', b === btn); });
         rState.svc = btn.getAttribute('data-svc');
-        renderRonchSummary();
+        renderDebitSummary();
       });
     });
     document.querySelectorAll('.seg[data-rseg]').forEach(function(seg){
@@ -1901,30 +1964,35 @@
         btn.addEventListener('click', function(){
           seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b === btn); });
           rState[key] = btn.getAttribute('data-mode');
-          if(key === 'r_cohort') renderRonchCohort(); else renderRonchSku();
+          if(key === 'r_cohort') renderDebitCohort(); else renderDebitSku();
         });
       });
     });
   }
 
-  // Defect type / component dropdowns: Vontron's are fixed; Ronch's list the debit note's components
+  function isDebitView(){ return DATASETS[currentDataset].kind === 'debit' && !!(window.MW_DEBIT && window.MW_DEBIT[currentDataset]); }
+
+  // Defect type / component dropdowns: Vontron's are fixed; debit notes list their own components
   var typeSel = document.getElementById('defectType');
   var compSel = document.getElementById('component');
   function applyControls(){
     if(!vontronControls) vontronControls = { type: typeSel.innerHTML, comp: compSel.innerHTML };
-    rInit();
-    if(currentDataset !== 'ronch' || !R){
+    var debit = isDebitView();
+    document.getElementById('periodControl').hidden = !debit || window.MW_DEBIT[currentDataset].periods.length < 2;
+    if(!debit){
       typeSel.innerHTML = vontronControls.type;
       compSel.innerHTML = vontronControls.comp;
       return;
     }
+    rWire();
+    rUse(currentDataset);
     typeSel.innerHTML = '<option value="spare">Spare defect</option><option value="nonspare">Non-spare defect</option>';
     typeSel.value = rState.type;
     rFillComponents();
   }
   function rFillComponents(){
     var counts = {};
-    R.rows.forEach(function(r){ if(rv(r, 'type') === rState.type) counts[rv(r, 'component')] = (counts[rv(r, 'component')] || 0) + 1; });
+    rPeriodRows().forEach(function(r){ if(rv(r, 'type') === rState.type) counts[rv(r, 'component')] = (counts[rv(r, 'component')] || 0) + 1; });
     var comps = Object.keys(counts).sort(function(a, b){ return counts[b] - counts[a]; });
     if(comps.indexOf(rState.comp) < 0) rState.comp = '';
     compSel.innerHTML = '';
@@ -1933,35 +2001,36 @@
     compSel.value = rState.comp;
   }
   typeSel.addEventListener('change', function(){
-    if(currentDataset !== 'ronch' || !R) return;
+    if(!isDebitView()) return;
     rState.type = typeSel.value;
     rState.comp = '';
     rFillComponents();
-    renderRonch();
+    renderDebit();
   });
   compSel.addEventListener('change', function(){
-    if(currentDataset !== 'ronch' || !R) return;
+    if(!isDebitView()) return;
     rState.comp = compSel.value;
-    renderRonch();
+    renderDebit();
   });
 
-  function renderRonch(){
-    if(!R) return;
-    var banner = document.getElementById('ronchBanner');
-    banner.textContent = R.meta.note_title +  ' — any installation date, grouped by installation month; ' + fmtInt(R.meta.cohort_size) +
-      ' machines revisited. Chargeable windows from install: spares 365 days, filters 30 days, non-spare service 180 days.';
-    banner.title = R.meta.methodology + '\n\n' + R.meta.known_gaps;
-    renderRonchSummary();
-    renderRonchComponents();
-    renderRonchCohort();
-    renderRonchSku();
-    renderRonchRows();
+  function renderDebit(){
+    if(!isDebitView()) return;
+    var banner = document.getElementById('debitBanner');
+    banner.textContent = DEBIT.meta.banner + ' ' + rPeriodLabel() + ': ' + fmtInt(rCohortSize()) + ' machines revisited. ' + DEBIT.meta.chargeable_rule;
+    banner.title = DEBIT.meta.methodology + '\n\n' + DEBIT.meta.known_gaps;
+    renderDebitSummary();
+    renderDebitComponents();
+    renderDebitCohort();
+    renderDebitSku();
+    renderDebitRows();
   }
 
-  function renderRonchSummary(){
+  function renderDebitSummary(){
     var sel = rSelected();
-    var note = R.with_service.rows, noteNo = R.without_service.rows;
-    var chargeable = sel.filter(function(r){ return rv(r, 'within') === 1; }).length;
+    var note = rNote('with_service').rows, noteNo = rNote('without_service').rows;
+    var total = note[note.length - 1][note[0].length - 1];
+    var issued = rPeriods().reduce(function(a, p){ return a + p.note_total; }, 0);
+    var chargeable = sel.filter(rBilled).length;
     var debit = sel.reduce(function(a, r){ return a + rDebit(r); }, 0);
     var stats = document.getElementById('rSummaryStats');
     stats.innerHTML = '';
@@ -1972,12 +2041,12 @@
       t.appendChild(el('div', 'foot', foot));
       stats.appendChild(t);
     }
-    tile('Total debit (with service)', fmtRs(note[note.length - 1][note[0].length - 1]), 'By installation date · issued note ' + fmtRs(R.meta.note_total));
+    tile('Total debit (with service)', fmtRs(total), rPeriodLabel() + (Math.abs(total - issued) >= 1 ? ' · issued note ' + fmtRs(issued) : ''));
     tile('Total debit (without service)', fmtRs(noteNo[noteNo.length - 1][noteNo[0].length - 1]), 'Part cost only');
     tile('Selection debit', fmtRs(debit), rSelectionLabel());
     tile('Selection line items', fmtInt(sel.length), fmtInt(chargeable) + ' chargeable (' + fmt1(pct(chargeable, sel.length)) + '%)');
 
-    var src = rState.svc === 'with' ? R.with_service : R.without_service;
+    var src = rNote(rState.svc === 'with' ? 'with_service' : 'without_service');
     var thead = document.querySelector('#rNoteTable thead'), tbody = document.querySelector('#rNoteTable tbody');
     thead.innerHTML = ''; tbody.innerHTML = '';
     var trh = el('tr');
@@ -1990,7 +2059,7 @@
       tbody.appendChild(tr);
     });
 
-    var qs = R.meta.quarters;
+    var qs = src.header.slice(1, -1);
     var lines = { part: qs.map(function(){ return 0; }), svc: qs.map(function(){ return 0; }) };
     sel.forEach(function(r){
       if(!rBilled(r)) return;
@@ -2015,19 +2084,18 @@
     });
   }
 
-  function renderRonchComponents(){
+  function renderDebitComponents(){
     var by = {};
-    R.rows.forEach(function(r){
+    rPeriodRows().forEach(function(r){
       if(rv(r, 'type') !== rState.type) return;
       var c = rv(r, 'component');
       var g = by[c] = by[c] || { comp: c, n: 0, within: 0, part: 0, svc: 0 };
       g.n++;
-      if(rv(r, 'within') === 1) g.within++;
-      if(rBilled(r)){ g.part += rv(r, 'part'); g.svc += rv(r, 'svc'); }
+      if(rBilled(r)){ g.within++; g.part += rv(r, 'part'); g.svc += rv(r, 'svc'); }
     });
     var groups = Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return b.n - a.n; });
     var maxN = groups.reduce(function(m, g){ return Math.max(m, g.n); }, 0);
-    var cohort = R.meta.cohort_size;
+    var cohort = rCohortSize();
     document.getElementById('rCompTitle').textContent = (rState.type === 'spare' ? 'Spare' : 'Non-spare') + ' components';
     document.getElementById('rCompHint').textContent = 'Click a row to select that component';
     var tbody = document.querySelector('#rCompTable tbody'), tfoot = document.querySelector('#rCompTable tfoot');
@@ -2045,7 +2113,7 @@
       tr.addEventListener('click', function(){
         rState.comp = rState.comp === g.comp ? '' : g.comp;
         compSel.value = rState.comp;
-        renderRonch();
+        renderDebit();
       });
       tbody.appendChild(tr);
       ['n', 'within', 'part', 'svc'].forEach(function(k){ tot[k] += g[k]; });
@@ -2058,13 +2126,15 @@
 
   // Tenure table: one row per group (installation month or model), tenure buckets across
   function rTenureTable(tableId, rows, keyOf, order, mode){
+    var nb = DEBIT.meta.tenure_buckets.length;
+    function zeros(){ var a = []; for(var i = 0; i < nb; i++) a.push(0); return a; }
     var by = {};
     rows.forEach(function(r){
       var k = keyOf(r);
-      var g = by[k] = by[k] || { key: k, b: [0, 0, 0, 0, 0], n: 0, within: 0, debit: 0 };
+      var g = by[k] = by[k] || { key: k, b: zeros(), n: 0, within: 0, debit: 0 };
       g.b[rTenureIdx(rv(r, 'tenure'))]++;
       g.n++;
-      if(rv(r, 'within') === 1) g.within++;
+      if(rBilled(r)) g.within++;
       g.debit += rDebit(r);
     });
     var groups = Object.keys(by).sort(order).map(function(k){ return by[k]; });
@@ -2072,7 +2142,7 @@
     groups.forEach(function(g){ g.b.forEach(function(v){ max = Math.max(max, mode === 'pct' ? pct(v, g.n) : v); }); });
     var tbody = document.querySelector('#' + tableId + ' tbody'), tfoot = document.querySelector('#' + tableId + ' tfoot');
     tbody.innerHTML = ''; tfoot.innerHTML = '';
-    var tot = { b: [0, 0, 0, 0, 0], n: 0, within: 0, debit: 0 };
+    var tot = { b: zeros(), n: 0, within: 0, debit: 0 };
     function row(label, g, heat){
       var tr = el('tr');
       tr.appendChild(rCell(label, heat ? 'rowlabel' : null));
@@ -2092,36 +2162,35 @@
       tot.n += g.n; tot.within += g.within; tot.debit += g.debit;
     });
     if(groups.length) tfoot.appendChild(row('Overall', tot, false));
-    if(!groups.length){
-      var tr = el('tr'); var td = el('td', 'na', 'No lines for this selection.'); td.colSpan = 9; tr.appendChild(td); tbody.appendChild(tr);
+    else {
+      var tr = el('tr'); var td = el('td', 'na', 'No lines for this selection.'); td.colSpan = nb + 4; tr.appendChild(td); tbody.appendChild(tr);
     }
   }
 
-  function renderRonchCohort(){
+  function renderDebitCohort(){
     var sku = document.getElementById('rCohortSku').value;
     var rows = rSelected().filter(function(r){ return !sku || rv(r, 'sku') === sku; });
     rTenureTable('rCohortTable', rows, function(r){ return rv(r, 'install_month'); }, function(a, b){
       return a < b ? 1 : a > b ? -1 : 0;
     }, rState.r_cohort);
-    document.getElementById('rCohortNote').textContent = rSelectionLabel() + '. Rows are the machine\'s installation month. ' +
-      'Chargeable = within the warranty window from install (spares 365 days, filters 30, non-spare service 180); Debit sums those lines.';
+    document.getElementById('rCohortNote').textContent = rSelectionLabel() + ' · ' + rPeriodLabel() +
+      '. Rows are the machine\'s installation month. ' + DEBIT.meta.chargeable_rule + ' Debit sums the chargeable lines.';
   }
 
-  function renderRonchSku(){
+  function renderDebitSku(){
     rTenureTable('rSkuTable', rSelected(), function(r){ return rv(r, 'sku') || 'Unknown'; }, function(a, b){ return a < b ? -1 : a > b ? 1 : 0; }, rState.r_sku);
   }
 
-  var RONCH_ROW_COLS = [
+  var DEBIT_ROW_COLS = [
     ['Machine barcode', 'barcode'], ['Model', 'sku'], ['Install month', 'install_month'], ['Installed', 'install_date'],
     ['Revisit', 'revisit_date'], ['Tenure (days)', 'tenure'], ['Item / issue', 'item'], ['Component', 'component'],
     ['Group', 'group'], ['Within window', 'within'], ['Part cost', 'part'], ['Service cost', 'svc'],
     ['L1 reason', 'l1'], ['L2 reason', 'l2']
   ];
-  var RONCH_NUM_COLS = ['tenure', 'part', 'svc'];
-  function renderRonchRows(){
+  var DEBIT_NUM_COLS = ['tenure', 'part', 'svc'];
+  function renderDebitRows(){
     var f = rState.rows;
-    var all = rSelected();
-    var rows = all.filter(function(r){
+    var rows = rSelected().filter(function(r){
       if(f.barcode && (rv(r, 'barcode') || '').toUpperCase().indexOf(f.barcode) < 0) return false;
       if(f.sku && rv(r, 'sku') !== f.sku) return false;
       if(f.install && rv(r, 'install_month') !== f.install) return false;
@@ -2129,21 +2198,21 @@
       if(f.l1 && rv(r, 'l1') !== f.l1) return false;
       return true;
     });
-    document.getElementById('rRowCount').textContent = 'Showing ' + fmtInt(Math.min(rows.length, RONCH_ROW_LIMIT)) + ' of ' + fmtInt(rows.length) +
-      ' lines' + (rows.length > RONCH_ROW_LIMIT ? ' (narrow with filters to see the rest)' : '') + ' · ' + rSelectionLabel();
+    document.getElementById('rRowCount').textContent = 'Showing ' + fmtInt(Math.min(rows.length, DEBIT_ROW_LIMIT)) + ' of ' + fmtInt(rows.length) +
+      ' lines' + (rows.length > DEBIT_ROW_LIMIT ? ' (narrow with filters to see the rest)' : '') + ' · ' + rSelectionLabel();
     var thead = document.querySelector('#rRowsTable thead'), tbody = document.querySelector('#rRowsTable tbody');
     thead.innerHTML = ''; tbody.innerHTML = '';
     var trh = el('tr');
-    RONCH_ROW_COLS.forEach(function(c){ trh.appendChild(el('th', RONCH_NUM_COLS.indexOf(c[1]) < 0 ? 'r-txt' : null, c[0])); });
+    DEBIT_ROW_COLS.forEach(function(c){ trh.appendChild(el('th', DEBIT_NUM_COLS.indexOf(c[1]) < 0 ? 'r-txt' : null, c[0])); });
     thead.appendChild(trh);
-    rows.slice(0, RONCH_ROW_LIMIT).forEach(function(r){
+    rows.slice(0, DEBIT_ROW_LIMIT).forEach(function(r){
       var tr = el('tr');
-      RONCH_ROW_COLS.forEach(function(c, i){
+      DEBIT_ROW_COLS.forEach(function(c, i){
         var v = rv(r, c[1]);
         var text = c[1] === 'part' || c[1] === 'svc' ? fmtRs(v, 2)
           : c[1] === 'within' ? (v === 1 ? 'Yes' : 'No')
           : (v == null || v === '' ? '—' : String(v));
-        tr.appendChild(rCell(text, i === 0 ? 'rowlabel mono' : RONCH_NUM_COLS.indexOf(c[1]) < 0 ? 'r-txt' : null));
+        tr.appendChild(rCell(text, i === 0 ? 'rowlabel mono' : DEBIT_NUM_COLS.indexOf(c[1]) < 0 ? 'r-txt' : null));
       });
       tbody.appendChild(tr);
     });
