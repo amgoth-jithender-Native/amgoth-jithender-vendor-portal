@@ -16,5 +16,10 @@ where email in ('dheerajbathla@urbancompany.com');
 update public.profiles set role = 'vendor', vendor_name = 'Ronch'
 where email in ('siddharthchoudhary@urbancompany.com');
 
+-- Keshav (Amber) -- already created and assigned directly by the admin (full_name 'Keshav Amber',
+-- role 'vendor', vendor_name 'Keshav'). debit-note-amber.html checks for vendor_name 'amber' or
+-- 'keshav' (case-insensitive), same dual-accept pattern as Siddharth/Ronch. No SQL needed here --
+-- this comment just documents it for anyone reading this file later.
+
 -- Check the result
 select email, role, vendor_name from public.profiles order by role, email;

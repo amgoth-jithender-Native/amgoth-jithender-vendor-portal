@@ -26,10 +26,11 @@ system, not a tab added to `index.html`.
   exists. Nothing here creates a login on its own.
 - Data: `Ronch_Debit_Note_Sept2026.xlsx` (Sept 2026 revisits, any machine
   production/install date), embedded directly — summary (with/without
-  service, by production quarter), issue-level breakdown (spare vs non-spare
-  categories, % of the 6,772-machine cohort), the spare price reference table
-  that drives every part-cost line, and all 8,498 revisit-level rows
-  (filterable by barcode, SKU, group, chargeable window, reason).
+  service, **by install quarter**, corrected 2026-10-15, see below), issue-level
+  breakdown (spare vs non-spare categories, % of the 6,772-machine cohort), the
+  spare price reference table that drives every part-cost line, and all 8,498
+  revisit-level rows (filterable by barcode, SKU, group, chargeable window,
+  reason).
 - Known gaps, same as the source workbook: 13 item types have no priced BOM
   source (priced Rs 0, flagged, not hidden); 49 of 60 Rest/Filter/Other spare
   items had their Sept-26 price carried forward from Aug-26, not individually
@@ -39,6 +40,52 @@ system, not a tab added to `index.html`.
 - This is a point-in-time snapshot (data pulled/built 2026-10-05/06) — not
   live-queried, unlike the main portal. Re-run the debit-note build and
   re-extract into this page to refresh it.
+- **A second Ronch surface also exists**: `index.html` itself now has an
+  integrated Ronch dashboard (Debit Note, Components, Production Cohort, By
+  Model, Revisit Detail tabs) that a Ronch/Siddharth login lands on directly,
+  built by a parallel session the same day. `ronch-data.js` is generated
+  *from* this page's `DEBIT_DATA` via `scripts/build-ronch-data.py` — re-run
+  it (or tell that session) if `DEBIT_DATA`'s structure or `revisit_header`
+  columns ever change here. Which of the two surfaces Siddharth should
+  actually use is still an open question for the user to decide.
+- **Fixed 2026-10-15**: the summary table was originally grouped by each
+  line's *production* quarter (inherited from the source workbook), which
+  silently excluded 26 real chargeable line items (Rs 16,880.66) from
+  machines produced before Q3-25 or with an unreadable production date, even
+  though they were installed within the warranty window and genuinely
+  chargeable — the exact same class of mistake as the main portal's own
+  install-month cohort-axis fix earlier the same day. Regrouped by install
+  quarter instead: total with service rose from Rs 21,07,235.34 to
+  Rs 21,24,116.01, reconciling with the parallel `index.html` dashboard's own
+  fix to within 1 paisa.
+
+## Amber warranty debit note (`debit-note-amber.html`, added 2026-10-15)
+
+Same pattern as the Ronch page above, for **Amber** — two views matching the
+two debit notes already built for them:
+- **View 1**: cumulative revisits through 31 Aug 2026 (`Rs 7,21,828.36` with
+  service / `Rs 83,328.36` without) — a view switcher at the top of the page
+  toggles between the two.
+- **View 2**: revisits in September 2026 only (`Rs 4,41,819.12` with service /
+  `Rs 64,319.12` without).
+- Amber's methodology is simpler than Ronch's: a single rule (any revisit
+  within 30 days of install is chargeable; flat Rs 500/visit service cost),
+  no Covered/Rest/Filter split.
+- **Verified before building, not assumed**: checked whether the same
+  production-quarter-vs-install-quarter bug that hit the Ronch note also
+  applies here. It doesn't — Amber's entire production history is Q2-26/Q3-26
+  only (production itself only began ~Jun 2026), so production quarter and
+  install quarter can never diverge enough to drop a chargeable row. Zero
+  rows are excluded by the quarter axis in either view, confirmed directly
+  against the raw revisit data, not inferred from the Ronch fix.
+- Auth: `role IN ('admin','team_management')` or `role='vendor' AND
+  vendor_name` is `'amber'` or `'keshav'` (case-insensitive) — the admin
+  created Keshav's account with `vendor_name='Keshav'` directly (a person's
+  name, not the company name), same situation as Siddharth/Ronch, so the page
+  accepts either value rather than requiring a specific one.
+- Known gaps, same as the source workbooks: 14 item types have no
+  Amber-specific BOM price source (approx-matched from M1/M2 family tabs
+  where possible, flagged "approx"); no Amber M0 BOM tab exists at all.
 
 ## Status
 
