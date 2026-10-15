@@ -466,7 +466,7 @@
     <button class="tab-btn" data-dataset="vontron" data-tab="rows"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Row-Level Detail</button>
     <button class="tab-btn" data-dataset="ronch" data-tab="r_summary" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.5" y="1.5" width="10" height="12" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Debit Note</button>
     <button class="tab-btn" data-dataset="ronch" data-tab="r_components" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 3.5h12M1.5 7.5h8M1.5 11.5h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Components</button>
-    <button class="tab-btn" data-dataset="ronch" data-tab="r_cohort" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Production Cohort</button>
+    <button class="tab-btn" data-dataset="ronch" data-tab="r_cohort" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Install Cohort</button>
     <button class="tab-btn" data-dataset="ronch" data-tab="r_sku" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>By Model</button>
     <button class="tab-btn" data-dataset="ronch" data-tab="r_rows" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Revisit Detail</button>
   </nav>
@@ -595,14 +595,14 @@
       <div class="stat-row" id="rSummaryStats"></div>
       <div class="card">
         <div class="card-head">
-          <h2>Debit note summary, by production quarter</h2>
+          <h2>Debit note summary, by installation quarter</h2>
           <div class="seg" id="rSvcSeg"><button class="active" data-svc="with">With service</button><button data-svc="without">Without service</button></div>
         </div>
         <div class="table-wrap"><table id="rNoteTable"><thead></thead><tbody></tbody></table></div>
-        <div class="table-note">The whole note, all components. Part cost is priced by the revisit month; production quarter is shown for traceability only. Service cost is Rs 500 per visit, charged once per visit.</div>
+        <div class="table-note">The whole note, all components, chargeable lines grouped by the machine's installation quarter. Part cost is priced by the revisit month. Service cost is Rs 500 per visit, charged once per visit. Install-time spare replacement happened at installs during the revisit month, so it sits in that quarter.</div>
       </div>
       <div class="card">
-        <div class="card-head"><h2 id="rSelTitle">This selection, by production quarter</h2><span class="hint">Chargeable lines only (within the warranty window)</span></div>
+        <div class="card-head"><h2 id="rSelTitle">This selection, by installation quarter</h2><span class="hint">Chargeable lines only (within the warranty window)</span></div>
         <div class="table-wrap"><table id="rSelTable"><thead></thead><tbody></tbody></table></div>
         <div class="table-note">A visit's Rs 500 service charge sits on its first priced line, so it counts toward that line's component. Install-time spare replacement is billed separately in the note and is not in this table.</div>
       </div>
@@ -617,7 +617,7 @@
             <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
-        <div class="table-note">% = line items ÷ machines with at least one September-2026 revisit; a revisit that replaces two parts counts toward both. Debit covers chargeable lines in the production quarters the note bills.</div>
+        <div class="table-note">% = line items ÷ machines with at least one September-2026 revisit; a revisit that replaces two parts counts toward both. Debit covers chargeable lines (within the warranty window).</div>
       </div>
     </section>
 
@@ -627,10 +627,10 @@
         <div class="seg" data-rseg="r_cohort"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">% of month</button></div>
       </div>
       <div class="card">
-        <div class="card-head"><h2>Failures by production month and tenure</h2><span class="hint">Tenure = revisit date − installation date</span></div>
+        <div class="card-head"><h2>Failures by installation month and tenure</h2><span class="hint">Tenure = revisit date − installation date</span></div>
         <div class="table-wrap">
           <table id="rCohortTable">
-            <thead><tr><th>Production month</th><th>≤1m</th><th>1–2m</th><th>2–6m</th><th>6–12m</th><th>12m+</th><th>Total</th><th>Chargeable</th><th>Debit</th></tr></thead>
+            <thead><tr><th>Install month</th><th>≤1m</th><th>1–2m</th><th>2–6m</th><th>6–12m</th><th>12m+</th><th>Total</th><th>Chargeable</th><th>Debit</th></tr></thead>
             <tbody></tbody><tfoot></tfoot>
           </table>
         </div>
@@ -659,7 +659,7 @@
         <div class="filters">
           <input type="text" id="rfBarcode" placeholder="Search machine barcode…">
           <select id="rfSku"><option value="">Model: all</option></select>
-          <select id="rfProd"><option value="">Production month: all</option></select>
+          <select id="rfInstall"><option value="">Installation month: all</option></select>
           <select id="rfWithin"><option value="">Within window: all</option><option value="1">Yes (chargeable)</option><option value="0">No</option></select>
           <select id="rfL1"><option value="">L1 reason: all</option></select>
         </div>
@@ -694,7 +694,7 @@
   };
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
   var TAB_LABELS = { cohort:'Install Cohort', geo:'Geography', tds:'Water Quality (TDS)', rows:'Row-Level Detail',
-    r_summary:'Debit Note', r_components:'Components', r_cohort:'Production Cohort', r_sku:'By Model', r_rows:'Revisit Detail' };
+    r_summary:'Debit Note', r_components:'Components', r_cohort:'Install Cohort', r_sku:'By Model', r_rows:'Revisit Detail' };
   var ALL_TABS = Object.keys(TAB_LABELS);
   var currentDataset = 'vontron'; // dataset on screen; staff switch it with the Vendor dropdown
   var currentRole = null;
@@ -1113,7 +1113,7 @@
     if(currentDataset !== 'vontron') document.getElementById('coverageDetail').hidden = true;
     document.querySelector('.vendor-chip').lastChild.textContent = DATASETS[currentDataset].chip;
     document.getElementById('pageFooter').textContent = currentDataset === 'ronch'
-      ? 'Membrane Watch · Ronch warranty debit note · Urban Company — revisits in September 2026, any machine production/install date. Part-cost gaps are disclosed in the debit note, not hidden.'
+      ? 'Membrane Watch · Ronch warranty debit note · Urban Company — revisits in September 2026, any installation date; figures grouped by installation month. Part-cost gaps are disclosed in the debit note, not hidden.'
       : vontronFooter;
     applyControls();
   }
@@ -1840,14 +1840,15 @@
   var R = null;
   var RC = {}; // column name -> index
   var rState = { type:'spare', comp:'', svc:'with', r_cohort:'abs', r_sku:'abs',
-    rows:{ barcode:'', sku:'', prod:'', within:'', l1:'' } };
+    rows:{ barcode:'', sku:'', install:'', within:'', l1:'' } };
   var TENURE_MAX = [30, 60, 180, 365, Infinity]; // ≤1m, 1–2m, 2–6m, 6–12m, 12m+ (days from install)
   var RONCH_ROW_LIMIT = 500;
   var vontronControls = null; // Vontron's dropdown options, restored when switching back
 
   function rv(r, c){ return r[RC[c]]; }
-  // Debit counts chargeable lines in the production quarters the note bills
-  function rBilled(r){ return rv(r, 'within') === 1 && R.meta.billed_quarters.indexOf(rv(r, 'quarter')) >= 0; }
+  // Debit counts every chargeable line (within the warranty window), whatever the machine's build date
+  function rBilled(r){ return rv(r, 'within') === 1; }
+  function rQuarter(month){ return 'Q' + (Math.floor((+month.slice(5, 7) - 1) / 3) + 1) + '-' + month.slice(2, 4); }
   function rDebit(r){ return rBilled(r) ? rv(r, 'part') + rv(r, 'svc') : 0; }
   function rTenureIdx(days){ for(var i = 0; i < TENURE_MAX.length; i++){ if(days <= TENURE_MAX[i]) return i; } return TENURE_MAX.length - 1; }
   function fmtRs(n, dp){ return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 }); }
@@ -1880,11 +1881,11 @@
     var skus = rDistinct('sku');
     rFillSelect('rCohortSku', skus);
     rFillSelect('rfSku', skus);
-    rFillSelect('rfProd', rDistinct('prod_month').reverse());
+    rFillSelect('rfInstall', rDistinct('install_month').reverse());
     rFillSelect('rfL1', rDistinct('l1'));
     document.getElementById('rCohortSku').addEventListener('change', renderRonchCohort);
     document.getElementById('rfBarcode').addEventListener('input', function(){ rState.rows.barcode = this.value.trim().toUpperCase(); renderRonchRows(); });
-    [['rfSku','sku'], ['rfProd','prod'], ['rfWithin','within'], ['rfL1','l1']].forEach(function(f){
+    [['rfSku','sku'], ['rfInstall','install'], ['rfWithin','within'], ['rfL1','l1']].forEach(function(f){
       document.getElementById(f[0]).addEventListener('change', function(){ rState.rows[f[1]] = this.value; renderRonchRows(); });
     });
     document.querySelectorAll('#rSvcSeg button').forEach(function(btn){
@@ -1947,7 +1948,7 @@
   function renderRonch(){
     if(!R) return;
     var banner = document.getElementById('ronchBanner');
-    banner.textContent = R.meta.note_title + ' — any production/install date, ' + fmtInt(R.meta.cohort_size) +
+    banner.textContent = R.meta.note_title +  ' — any installation date, grouped by installation month; ' + fmtInt(R.meta.cohort_size) +
       ' machines revisited. Chargeable windows from install: spares 365 days, filters 30 days, non-spare service 180 days.';
     banner.title = R.meta.methodology + '\n\n' + R.meta.known_gaps;
     renderRonchSummary();
@@ -1971,7 +1972,7 @@
       t.appendChild(el('div', 'foot', foot));
       stats.appendChild(t);
     }
-    tile('Total debit (with service)', fmtRs(note[note.length - 1][note[0].length - 1]), 'Whole note, Sept-26 revisits');
+    tile('Total debit (with service)', fmtRs(note[note.length - 1][note[0].length - 1]), 'By installation date · issued note ' + fmtRs(R.meta.note_total));
     tile('Total debit (without service)', fmtRs(noteNo[noteNo.length - 1][noteNo[0].length - 1]), 'Part cost only');
     tile('Selection debit', fmtRs(debit), rSelectionLabel());
     tile('Selection line items', fmtInt(sel.length), fmtInt(chargeable) + ' chargeable (' + fmt1(pct(chargeable, sel.length)) + '%)');
@@ -1989,15 +1990,15 @@
       tbody.appendChild(tr);
     });
 
-    var qs = R.meta.billed_quarters;
+    var qs = R.meta.quarters;
     var lines = { part: qs.map(function(){ return 0; }), svc: qs.map(function(){ return 0; }) };
     sel.forEach(function(r){
       if(!rBilled(r)) return;
-      var qi = qs.indexOf(rv(r, 'quarter'));
+      var qi = qs.indexOf(rQuarter(rv(r, 'install_month')));
       lines.part[qi] += rv(r, 'part');
       lines.svc[qi] += rv(r, 'svc');
     });
-    document.getElementById('rSelTitle').textContent = rSelectionLabel() + ', by production quarter';
+    document.getElementById('rSelTitle').textContent = rSelectionLabel() + ', by installation quarter';
     thead = document.querySelector('#rSelTable thead'); tbody = document.querySelector('#rSelTable tbody');
     thead.innerHTML = ''; tbody.innerHTML = '';
     trh = el('tr');
@@ -2055,7 +2056,7 @@
     tfoot.appendChild(tr);
   }
 
-  // Tenure table: one row per group (production month or model), tenure buckets across
+  // Tenure table: one row per group (installation month or model), tenure buckets across
   function rTenureTable(tableId, rows, keyOf, order, mode){
     var by = {};
     rows.forEach(function(r){
@@ -2099,14 +2100,11 @@
   function renderRonchCohort(){
     var sku = document.getElementById('rCohortSku').value;
     var rows = rSelected().filter(function(r){ return !sku || rv(r, 'sku') === sku; });
-    rTenureTable('rCohortTable', rows, function(r){ return rv(r, 'prod_month') || 'Unknown'; }, function(a, b){
-      if(a === 'Unknown') return 1;
-      if(b === 'Unknown') return -1;
+    rTenureTable('rCohortTable', rows, function(r){ return rv(r, 'install_month'); }, function(a, b){
       return a < b ? 1 : a > b ? -1 : 0;
     }, rState.r_cohort);
-    document.getElementById('rCohortNote').textContent = rSelectionLabel() + '. Production month is decoded from the machine barcode, for traceability; ' +
-      'it does not drive pricing. Debit covers chargeable lines in the production quarters the note bills (' +
-      R.meta.billed_quarters[0] + ' to ' + R.meta.billed_quarters[R.meta.billed_quarters.length - 1] + ').';
+    document.getElementById('rCohortNote').textContent = rSelectionLabel() + '. Rows are the machine\'s installation month. ' +
+      'Chargeable = within the warranty window from install (spares 365 days, filters 30, non-spare service 180); Debit sums those lines.';
   }
 
   function renderRonchSku(){
@@ -2114,7 +2112,7 @@
   }
 
   var RONCH_ROW_COLS = [
-    ['Machine barcode', 'barcode'], ['Model', 'sku'], ['Production month', 'prod_month'], ['Installed', 'install_date'],
+    ['Machine barcode', 'barcode'], ['Model', 'sku'], ['Install month', 'install_month'], ['Installed', 'install_date'],
     ['Revisit', 'revisit_date'], ['Tenure (days)', 'tenure'], ['Item / issue', 'item'], ['Component', 'component'],
     ['Group', 'group'], ['Within window', 'within'], ['Part cost', 'part'], ['Service cost', 'svc'],
     ['L1 reason', 'l1'], ['L2 reason', 'l2']
@@ -2126,7 +2124,7 @@
     var rows = all.filter(function(r){
       if(f.barcode && (rv(r, 'barcode') || '').toUpperCase().indexOf(f.barcode) < 0) return false;
       if(f.sku && rv(r, 'sku') !== f.sku) return false;
-      if(f.prod && rv(r, 'prod_month') !== f.prod) return false;
+      if(f.install && rv(r, 'install_month') !== f.install) return false;
       if(f.within !== '' && String(rv(r, 'within')) !== f.within) return false;
       if(f.l1 && rv(r, 'l1') !== f.l1) return false;
       return true;
