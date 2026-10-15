@@ -8,6 +8,33 @@ water quality (TDS), and row-level spare records.
 
 ## Status
 
+**Row-level cleanup + maturity-gating (2026-10-15):**
+- **Production month now decoded from the machine's own barcode** when the
+  specific spare isn't traceable (397 of 400 previously-"Not traceable" rows
+  fixed) — e.g. `NVM1XRP250713104` → `25`+`07` → Jul-25. Validated against real
+  ground truth at **99.98% (Ronch) / 98.61% (Amber)** accuracy before trusting
+  it at scale. Labeled via a `prod_source` field (`spare_barcode` vs
+  `machine_barcode`) so the two meanings never blend silently — a
+  machine-barcode-decoded month is the machine's own assembly date, not
+  necessarily the specific (untraceable) repair spare's own production date.
+  3 rows stay "Not traceable" (malformed barcodes); 1 implausible decode
+  (5-year gap to install) was reverted rather than trusted.
+- **Re-investigated the 177 "Not recorded" Reason/Sub-reason rows** using the
+  most precise possible join (exact install ID + row-numbered revisit match,
+  same method as Amber's). Result: zero additional reasons recovered — these
+  are genuinely unrecorded in the source ticketing system, not a join bug.
+  Confirmed, not fixed, because there was nothing to fix.
+- **Every tenure bucket now shows a dash instead of a possibly-misleading 0**
+  when that window isn't fully matured yet for the group's own most-recently-
+  installed machine — e.g. an install month's 6-12m column stays blank until
+  even its last day's install has had the full 365 days, not just its first.
+  Applies to Install Cohort, Geography, and TDS alike. A non-zero count still
+  shows even if not fully matured (it's a real observation, just possibly
+  incomplete) — only a 0 that might just mean "too soon to tell" gets dashed.
+  TDS band maturity is computed from a point-in-time device-TDS snapshot
+  (pulled 2026-10-06), so it's a little more conservative than Cohort/
+  Geography, which use live install dates.
+
 **Cohort axis changed to install month (2026-10-15):** the "Install Cohort" tab
 (formerly "Production Cohort") now groups by the month a machine was
 **installed**, not the month its spare was produced — a full replacement of
@@ -148,16 +175,13 @@ Not yet in scope (would extend the same pipeline):
   workbook, not investigated further yet. This is now only visible via
   Row-Level Detail's Spare Prod Month column, since Install Cohort no longer
   groups by production month (see above)
-- Install cohort funnel 12–18m / 18–24m: an install month gets a value
-  (defects ÷ total installs for that month) only if some of its machines have
-  already been in use past 12 / 18 months; otherwise the cell shows a dash.
-  As of 2026-10-15 only Sep–Oct 2025 install cohorts show 12–18m (0 qualifying
-  events in that window so far), and 18–24m is a dash everywhere (first
-  machines reach 18 months in Mar 2027, since installs start 15 Sep 2025)
-- Geography + TDS funnels 12–18m / 18–24m (2026-10-06): same rule as the
-  cohort funnel; a city / TDS band gets a value only if some of its machines
-  have been in use past 12 / 18 months, otherwise a dash. State view sums the
-  cities that have data. All 10 replacements at 366–376 days are counted
+- Maturity-gating (2026-10-15, see above) now applies uniformly to **every**
+  bucket, not just 12–18m/18–24m: a cell only shows a real 0 once the group's
+  latest-installed machine has had that bucket's full window to mature,
+  otherwise it's a dash. As of 2026-10-15 only Sep-25 install cohort's 12-18m
+  is matured (0 qualifying events so far); 18-24m is a dash everywhere (first
+  machines reach 18 months in Mar 2027). State view in Geography sums the
+  cities that have a value. All 10 replacements at 366–376 days are counted
   (geography, TDS, and install cohort all count every qualifying event now).
 - Row-level detail now has **Reason** and **Sub-reason** (the revisit ticket's
   REASON / SUBREASON from `REQUEST__NATIVE_INSTALLATION_REVISIT__DAILY__FACTS`,
