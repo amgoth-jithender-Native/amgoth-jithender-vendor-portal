@@ -450,7 +450,7 @@
   // ---------- Supabase ----------
   var SUPABASE_URL = "https://cawycwllhekdvaimurar.supabase.co";
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE";
-  var ALLOWED_VENDOR = "ronch";
+  var ALLOWED_VENDORS = ["ronch", "siddharth"]; // vendor_name is "Siddharth" for now, will become "Ronch" later -- accept either so that switch doesn't need a matching code change
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
   var currentRole = null;
   var currentEmail = null;
@@ -509,7 +509,7 @@
   function accessProblem(profile){
     if(!profile) return 'Your account has no profile yet. Ask an admin to set it up.';
     if(profile.role === 'admin' || profile.role === 'team_management') return null;
-    if(profile.role === 'vendor' && (profile.vendor_name || '').trim().toLowerCase() === ALLOWED_VENDOR) return null;
+    if(profile.role === 'vendor' && ALLOWED_VENDORS.indexOf((profile.vendor_name || '').trim().toLowerCase()) >= 0) return null;
     return 'Your account is not linked to the Ronch debit note yet. Ask an admin to assign it.';
   }
 
