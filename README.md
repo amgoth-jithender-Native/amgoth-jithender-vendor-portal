@@ -6,6 +6,40 @@ Lets a spare-part manufacturer log in and see field-failure data for their own
 component: install cohort trends, defect rate by geography, defect rate by
 water quality (TDS), and row-level spare records.
 
+## Ronch warranty debit note (`debit-note-ronch.html`, added 2026-10-15)
+
+A second, separate page — not a tab in the main portal — for **Ronch** (the
+machine assembler) to see their own warranty debit note: what they owe UC for
+defects on machines they built, split into spare and non-spare line items.
+This is a different kind of data from the rest of this portal (internal
+warranty cost figures, not RO Membrane field-failure rates) and a different
+vendor (Ronch, not Vontron), so it's a standalone file sharing only the login
+system, not a tab added to `index.html`.
+
+- Same Supabase auth as the main portal, same `profiles` table — gated on
+  `role IN ('admin','team_management')` or `role='vendor' AND vendor_name='Ronch'`
+  (case-insensitive), via the same `accessProblem()` pattern as `PORTAL_VENDOR`.
+  See `supabase/assign_roles.sql` for the template to grant a user access —
+  **the actual Supabase Auth account still has to be created by an admin in
+  the Dashboard first** (Authentication → Users → Add user, or send an
+  invite); this file only assigns the role/vendor_name once that account
+  exists. Nothing here creates a login on its own.
+- Data: `Ronch_Debit_Note_Sept2026.xlsx` (Sept 2026 revisits, any machine
+  production/install date), embedded directly — summary (with/without
+  service, by production quarter), issue-level breakdown (spare vs non-spare
+  categories, % of the 6,772-machine cohort), the spare price reference table
+  that drives every part-cost line, and all 8,498 revisit-level rows
+  (filterable by barcode, SKU, group, chargeable window, reason).
+- Known gaps, same as the source workbook: 13 item types have no priced BOM
+  source (priced Rs 0, flagged, not hidden); 49 of 60 Rest/Filter/Other spare
+  items had their Sept-26 price carried forward from Aug-26, not individually
+  re-verified that month.
+- Deploy: `.github/workflows/deploy.yml` copies and key-injects this file the
+  same way it does `index.html` — no separate deploy step needed.
+- This is a point-in-time snapshot (data pulled/built 2026-10-05/06) — not
+  live-queried, unlike the main portal. Re-run the debit-note build and
+  re-extract into this page to refresh it.
+
 ## Status
 
 **Row-level cleanup + maturity-gating (2026-10-15):**
