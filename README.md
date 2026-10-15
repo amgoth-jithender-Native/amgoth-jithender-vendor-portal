@@ -70,6 +70,18 @@ hardcoded demo credential from the original prototype is gone. The numbers on
 every tab are computed from an actual join of UC's install/defect data against
 the manufacturing scan data, not mock figures.
 
+**Vendor access (admin).** Admins get a *Vendor access* button in the top bar.
+It lists every vendor (the distinct `profiles.vendor_name` of vendor accounts),
+lets the admin tick which tables each vendor sees (Install Cohort, Geography,
+Water Quality, Row-Level Detail), and offers *Preview as …* to view the portal
+exactly as that vendor will (rates only, states only, only the ticked tables).
+Vendor logins with no vendor name appear at the bottom and can be linked there.
+Choices are stored in `public.vendor_access` (`supabase/migrations/003_vendor_access.sql`);
+a vendor with no tables assigned can't sign in. The page still carries only
+Vontron's data, so other vendors stay blocked ("dashboard is being set up")
+until their data is added. Hiding tables is a display rule only: every table's
+data still ships inside the page.
+
 **Cross-validated against true production records (2026-09-30):** every
 number below has now been checked against Ronch's own production log (a
 separate Google Sheet, not UC's warehouse) — genuinely independent evidence,
