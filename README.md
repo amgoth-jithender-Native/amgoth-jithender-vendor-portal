@@ -3,10 +3,39 @@
 Vendor field-failure portal — pilot for **Vontron / RO Membrane** at Urban Company.
 
 Lets a spare-part manufacturer log in and see field-failure data for their own
-component: production cohort trends, defect rate by geography, defect rate by
+component: install cohort trends, defect rate by geography, defect rate by
 water quality (TDS), and row-level spare records.
 
 ## Status
+
+**Cohort axis changed to install month (2026-10-15):** the "Install Cohort" tab
+(formerly "Production Cohort") now groups by the month a machine was
+**installed**, not the month its spare was produced — a full replacement of
+the axis, not an added view (user's explicit call after weighing the
+trade-off). Two real, disclosed consequences:
+- **Coverage jumps from ~69% to ~100% of installs** — install month is known
+  for virtually every machine (21 Amber rows with no recorded install date are
+  the only exclusion), whereas production month was only knowable for the
+  ~69% of installs traceable to a scanned spare barcode.
+- **Defect counts per cell now include every qualifying repair**, including
+  later UC-channel replacements, not just a machine's first (traceable)
+  replacement — this is a real increase in what's counted, not just a
+  relabeling. The trade-off: this view can no longer by itself point at "a bad
+  production batch," since installs in a given month may contain machines
+  assembled across several different production months. That diagnosis still
+  lives in Row-Level Detail's unchanged **Spare Prod Month** column.
+- The Sold-to filter on this tab now means "which manufacturer's *install*
+  population" (Ronch vs Amber) rather than "which channel the failed spare
+  came from" — selecting UC shows nothing here, since UC was never an
+  assembler of machines (see Row-Level Detail for UC-attributed repairs).
+
+**Correction surfaced while making this change:** Amber's install window was
+previously (and wrongly) described as "Jul–Aug 2026 only." That was a
+string-sort bug in a verbal date-range check (`"01/08/26" < "31/07/26"`
+lexicographically, since day comes first in `DD/MM/YY`) — the underlying data
+was never wrong, only that one descriptive claim. **Amber installs actually
+run from Jun 2026 (39 installs) through the present (3,932 in Oct 2026 so far,
+a partial month)** — corrected everywhere this was stated.
 
 **Real data wired in — scope: Ronch-assembled and Amber-assembled machines.** Login now uses
 real Supabase authentication with role-based access (admin/team/vendor) — the
@@ -77,9 +106,11 @@ later replacement = **UC** (same repair-stock channel Ronch's UC-attributed
 events come from). Real, important differences from Ronch, disclosed rather
 than smoothed over:
 - **16,567 Amber installs** (vs 181,795 Ronch) — Amber only appears in UC's
-  install pipeline from **Jul–Aug 2026** (its production itself only started
-  ~Jun 2026 per the true-production log), so this is the full population to
-  date, not an artificially narrowed window.
+  install pipeline from **Jun 2026 onward** (its production itself only
+  started ~Jun 2026 per the true-production log), so this is the full
+  population to date, not an artificially narrowed window. Install volume is
+  still ramping: 39 in Jun, 3,054 in Jul, 5,555 in Aug, 3,966 in Sep, 3,932 in
+  Oct so far (partial month).
 - **39 defect events, all first replacements, 0 second+** — Amber's cohort is
   too new to have reached the later tenure buckets (6–12m, 12–18m, 18–24m)
   that a meaningful share of Ronch's defects fall into. **Amber's defect rate
@@ -100,10 +131,10 @@ than smoothed over:
 - Jul 2026 shows 0 Amber membrane-traced installs and Aug 2026 only 6 (vs
   1,398 in Jun and 1,143 in Sep) — a dip similar in shape to Ronch's May-2026
   anomaly, confirmed real in the source sheet, not yet root-caused.
-- The Cohort tab's "Sold to" filter now genuinely splits Ronch vs Amber
-  production-month trends (`DATA.cohortRonch` / `DATA.cohortAmber`), not just
-  a label — Geography and TDS tabs remain combined-only (no per-manufacturer
-  split requested there).
+- The Cohort tab's "Sold to" filter genuinely splits Ronch vs Amber install
+  trends (`DATA.cohortRonch` / `DATA.cohortAmber`), not just a label —
+  Geography and TDS tabs remain combined-only (no per-manufacturer split
+  requested there).
 
 Not yet in scope (would extend the same pipeline):
 - UC-direct machines (sold straight to the end customer, no assembler)
@@ -114,21 +145,20 @@ Not yet in scope (would extend the same pipeline):
   replacement — so the defect figures above remain a floor, not a ceiling
 - May 2026's production cohort has unusually low spare-barcode traceability
   (12% vs 85-99% every other month) — likely a scanning gap in that batch's
-  workbook, not investigated further yet
-- Production cohort funnel 12–18m / 18–24m (added 2026-10-06): a production
-  month gets a value (defects ÷ total spares for that month) only if some of
-  its machines have already been in use past 12 / 18 months; otherwise the
-  cell shows a dash. Tenure counts from installation and installs start 15 Sep
-  2025, so as of 6 Oct 2026 only Apr–Aug 2025 cohorts show 12–18m (4 traceable
-  first replacements at 366–376 days), and 18–24m is a dash everywhere (first
-  machines reach 18 months in Mar 2027). Script:
-  `~/uc-audit/portal_tds/extend_cohort_12_24.py` (re-run with a fresh
-  >365-day event pull to update)
+  workbook, not investigated further yet. This is now only visible via
+  Row-Level Detail's Spare Prod Month column, since Install Cohort no longer
+  groups by production month (see above)
+- Install cohort funnel 12–18m / 18–24m: an install month gets a value
+  (defects ÷ total installs for that month) only if some of its machines have
+  already been in use past 12 / 18 months; otherwise the cell shows a dash.
+  As of 2026-10-15 only Sep–Oct 2025 install cohorts show 12–18m (0 qualifying
+  events in that window so far), and 18–24m is a dash everywhere (first
+  machines reach 18 months in Mar 2027, since installs start 15 Sep 2025)
 - Geography + TDS funnels 12–18m / 18–24m (2026-10-06): same rule as the
   cohort funnel; a city / TDS band gets a value only if some of its machines
   have been in use past 12 / 18 months, otherwise a dash. State view sums the
   cities that have data. All 10 replacements at 366–376 days are counted
-  (geography and TDS count every event, the cohort only traceable first ones).
+  (geography, TDS, and install cohort all count every qualifying event now).
 - Row-level detail now has **Reason** and **Sub-reason** (the revisit ticket's
   REASON / SUBREASON from `REQUEST__NATIVE_INSTALLATION_REVISIT__DAILY__FACTS`,
   matched on install + revisit date; 177 of 1,037 have none recorded and show
