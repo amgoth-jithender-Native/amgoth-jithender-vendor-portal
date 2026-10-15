@@ -146,6 +146,9 @@
   .badge.st-none{ color:var(--ink-muted); background:var(--surface); border-color:var(--border); }
   .preview-banner{ background:color-mix(in oklab, var(--accent) 16%, var(--surface)); }
   .preview-banner .btn-ghost{ margin-left:auto; padding:4px 10px; }
+  tr.r-click{ cursor:pointer; }
+  #rRowsTable th.r-txt, #rRowsTable td.r-txt{ text-align:left; }
+  tr.r-selected td{ background:var(--accent-soft) !important; font-weight:700; }
 
   .sample-banner{
     display:flex; align-items:center; gap:9px; padding:9px clamp(16px,3vw,32px);
@@ -409,7 +412,7 @@
   <dialog id="accessDialog" class="pw-dialog">
     <div class="login-card access-card">
       <h1>Vendor access</h1>
-      <p class="sub">Choose which tables each vendor sees after signing in. Vendors always see rates only, by state. Use Preview to see the portal exactly as that vendor will.</p>
+      <p class="sub">Choose which tables each vendor sees after signing in. Vontron's tables always show rates only, by state. Use Preview to see the portal exactly as that vendor will.</p>
       <div id="accessError" class="login-error" hidden><span>⚠</span><span id="accessErrorText"></span></div>
       <div id="accessList" class="access-list"></div>
       <div class="back-row"><button type="button" class="link-btn" id="accessClose">Close</button></div>
@@ -422,15 +425,23 @@
     <button class="btn-ghost" id="previewExit">Exit preview</button>
   </div>
 
-  <div class="sample-banner"><span class="pip"></span><span id="scopeBanner">Live figures — Ronch- and Amber-assembled machines.</span></div>
+  <div class="sample-banner" data-dataset="vontron"><span class="pip"></span><span id="scopeBanner">Live figures — Ronch- and Amber-assembled machines.</span></div>
 
-  <div class="sample-banner" id="coverageBanner" style="background:color-mix(in oklab, var(--accent) 10%, var(--surface)); cursor:pointer;" title="Click to expand data-coverage details">
+  <div class="sample-banner" data-dataset="vontron" id="coverageBanner" style="background:color-mix(in oklab, var(--accent) 10%, var(--surface)); cursor:pointer;" title="Click to expand data-coverage details">
     <span class="pip" style="background:var(--accent)"></span>
     <span id="coverageSummary">Loading production coverage…</span>
   </div>
+  <div class="sample-banner" data-dataset="ronch" hidden><span class="pip"></span><span id="ronchBanner"></span></div>
   <div id="coverageDetail" hidden style="padding:12px clamp(16px,3vw,32px); background:var(--surface-2); border-bottom:1px solid var(--border); font-size:0.78rem; color:var(--ink-2); line-height:1.6;"></div>
 
   <div class="controls-row">
+    <div class="control" id="vendorControl" hidden>
+      <label for="vendorSel">Vendor</label>
+      <select id="vendorSel" class="pill-select">
+        <option value="vontron">Vontron · RO Membrane</option>
+        <option value="ronch">Ronch · Warranty debit note</option>
+      </select>
+    </div>
     <div class="control">
       <label for="defectType">Defect type</label>
       <select id="defectType" class="pill-select">
@@ -449,10 +460,15 @@
   </div>
 
   <nav class="tabs" id="tabs">
-    <button class="tab-btn active" data-tab="cohort"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Install Cohort</button>
-    <button class="tab-btn" data-tab="geo"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13.5s5-4.4 5-8.1a5 5 0 10-10 0c0 3.7 5 8.1 5 8.1z" stroke="currentColor" stroke-width="1.4"/><circle cx="7.5" cy="5.4" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>Geography</button>
-    <button class="tab-btn" data-tab="tds"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5s3.7 4.7 3.7 7.5a3.7 3.7 0 11-7.4 0c0-2.8 3.7-7.5 3.7-7.5z" stroke="currentColor" stroke-width="1.4"/></svg>Water Quality (TDS)</button>
-    <button class="tab-btn" data-tab="rows"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Row-Level Detail</button>
+    <button class="tab-btn active" data-dataset="vontron" data-tab="cohort"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Install Cohort</button>
+    <button class="tab-btn" data-dataset="vontron" data-tab="geo"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13.5s5-4.4 5-8.1a5 5 0 10-10 0c0 3.7 5 8.1 5 8.1z" stroke="currentColor" stroke-width="1.4"/><circle cx="7.5" cy="5.4" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>Geography</button>
+    <button class="tab-btn" data-dataset="vontron" data-tab="tds"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5s3.7 4.7 3.7 7.5a3.7 3.7 0 11-7.4 0c0-2.8 3.7-7.5 3.7-7.5z" stroke="currentColor" stroke-width="1.4"/></svg>Water Quality (TDS)</button>
+    <button class="tab-btn" data-dataset="vontron" data-tab="rows"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Row-Level Detail</button>
+    <button class="tab-btn" data-dataset="ronch" data-tab="r_summary" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.5" y="1.5" width="10" height="12" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Debit Note</button>
+    <button class="tab-btn" data-dataset="ronch" data-tab="r_components" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 3.5h12M1.5 7.5h8M1.5 11.5h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Components</button>
+    <button class="tab-btn" data-dataset="ronch" data-tab="r_cohort" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Production Cohort</button>
+    <button class="tab-btn" data-dataset="ronch" data-tab="r_sku" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>By Model</button>
+    <button class="tab-btn" data-dataset="ronch" data-tab="r_rows" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Revisit Detail</button>
   </nav>
 
   <main>
@@ -573,9 +589,92 @@
         </div>
       </div>
     </section>
+
+    <!-- RONCH: warranty debit note (data in ronch-data.js, built from debit-note-ronch.html) -->
+    <section class="panel" data-panel="r_summary" hidden>
+      <div class="stat-row" id="rSummaryStats"></div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Debit note summary, by production quarter</h2>
+          <div class="seg" id="rSvcSeg"><button class="active" data-svc="with">With service</button><button data-svc="without">Without service</button></div>
+        </div>
+        <div class="table-wrap"><table id="rNoteTable"><thead></thead><tbody></tbody></table></div>
+        <div class="table-note">The whole note, all components. Part cost is priced by the revisit month; production quarter is shown for traceability only. Service cost is Rs 500 per visit, charged once per visit.</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2 id="rSelTitle">This selection, by production quarter</h2><span class="hint">Chargeable lines only (within the warranty window)</span></div>
+        <div class="table-wrap"><table id="rSelTable"><thead></thead><tbody></tbody></table></div>
+        <div class="table-note">A visit's Rs 500 service charge sits on its first priced line, so it counts toward that line's component. Install-time spare replacement is billed separately in the note and is not in this table.</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="r_components" hidden>
+      <div class="card">
+        <div class="card-head"><h2 id="rCompTitle">Components</h2><span class="hint" id="rCompHint"></span></div>
+        <div class="table-wrap">
+          <table id="rCompTable">
+            <thead><tr><th>Component</th><th>Line items</th><th>% of machines revisited</th><th>Chargeable</th><th>Part cost</th><th>Service cost</th><th>Debit</th></tr></thead>
+            <tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <div class="table-note">% = line items ÷ machines with at least one September-2026 revisit; a revisit that replaces two parts counts toward both. Debit covers chargeable lines in the production quarters the note bills.</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="r_cohort" hidden>
+      <div class="panel-toolbar">
+        <div class="filters"><select id="rCohortSku"><option value="">Model: all</option></select></div>
+        <div class="seg" data-rseg="r_cohort"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">% of month</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Failures by production month and tenure</h2><span class="hint">Tenure = revisit date − installation date</span></div>
+        <div class="table-wrap">
+          <table id="rCohortTable">
+            <thead><tr><th>Production month</th><th>≤1m</th><th>1–2m</th><th>2–6m</th><th>6–12m</th><th>12m+</th><th>Total</th><th>Chargeable</th><th>Debit</th></tr></thead>
+            <tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <div class="table-note" id="rCohortNote"></div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="r_sku" hidden>
+      <div class="panel-toolbar">
+        <div class="filters"></div>
+        <div class="seg" data-rseg="r_sku"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">% of model</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Failures by machine model and tenure</h2><span class="hint">Tenure = revisit date − installation date</span></div>
+        <div class="table-wrap">
+          <table id="rSkuTable">
+            <thead><tr><th>Model</th><th>≤1m</th><th>1–2m</th><th>2–6m</th><th>6–12m</th><th>12m+</th><th>Total</th><th>Chargeable</th><th>Debit</th></tr></thead>
+            <tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="r_rows" hidden>
+      <div class="panel-toolbar">
+        <div class="filters">
+          <input type="text" id="rfBarcode" placeholder="Search machine barcode…">
+          <select id="rfSku"><option value="">Model: all</option></select>
+          <select id="rfProd"><option value="">Production month: all</option></select>
+          <select id="rfWithin"><option value="">Within window: all</option><option value="1">Yes (chargeable)</option><option value="0">No</option></select>
+          <select id="rfL1"><option value="">L1 reason: all</option></select>
+        </div>
+        <span class="rowcount" id="rRowCount"></span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Revisit lines</h2><span class="hint">One row per invoiced part or non-spare issue on a September-2026 revisit</span></div>
+        <div class="table-wrap" style="max-height:620px; overflow-y:auto;">
+          <table id="rRowsTable"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <footer class="page-footer">Membrane Watch · pilot prototype · Vontron / RO Membrane · Urban Company — real figures, Ronch-assembled (Sep 2025–Sep 2026) and Amber-assembled (Jul–Aug 2026) machines. Not all defects trace to a spare barcode or carry a TDS reading — see coverage note above.</footer>
+  <footer class="page-footer" id="pageFooter">Membrane Watch · pilot prototype · Vontron / RO Membrane · Urban Company — real figures, Ronch-assembled (Sep 2025–Sep 2026) and Amber-assembled (Jul–Aug 2026) machines. Not all defects trace to a spare barcode or carry a TDS reading — see coverage note above.</footer>
 </div>
 
 <script>
@@ -586,14 +685,22 @@
   // ---------- Supabase ----------
   var SUPABASE_URL = "https://cawycwllhekdvaimurar.supabase.co";
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE"; // Project Settings -> API Keys -> publishable (anon) key
-  var PORTAL_VENDOR = "vontron"; // vendor whose data this page carries
+  // Vendors whose data this page carries: vendor_name (lower-cased) -> dataset.
+  // 'siddharth' is the interim vendor_name of the Ronch login (same as debit-note-ronch.html).
+  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch' };
+  var DATASETS = {
+    vontron: { chip:'Vontron · RO Membrane', status:'Data on portal · RO Membrane', tabs:['cohort','geo','tds','rows'] },
+    ronch:   { chip:'Ronch · Warranty Debit Note', status:'Data on portal · Sept-26 debit note', tabs:['r_summary','r_components','r_cohort','r_sku','r_rows'] }
+  };
   var ROLE_LABELS = { admin:'Admin', team_management:'Team Management', vendor:'Vendor' };
-  var TAB_LABELS = { cohort:'Install Cohort', geo:'Geography', tds:'Water Quality (TDS)', rows:'Row-Level Detail' };
+  var TAB_LABELS = { cohort:'Install Cohort', geo:'Geography', tds:'Water Quality (TDS)', rows:'Row-Level Detail',
+    r_summary:'Debit Note', r_components:'Components', r_cohort:'Production Cohort', r_sku:'By Model', r_rows:'Revisit Detail' };
   var ALL_TABS = Object.keys(TAB_LABELS);
+  var currentDataset = 'vontron'; // dataset on screen; staff switch it with the Vendor dropdown
   var currentRole = null;
   var currentEmail = null;
   var viewTabs = ALL_TABS;   // tables the current viewer may open (vendor_access.tabs for vendors)
-  var previewVendor = null;  // admin's "view as vendor" preview: { key, name }
+  var previewVendor = null;  // admin's "view as vendor" preview: { key, name, dataset }
   // Read the reset-email link's URL before the client consumes it
   var linkParams = new URLSearchParams(window.location.hash.slice(1));
   var cameFromRecovery = linkParams.get('type') === 'recovery';
@@ -657,7 +764,7 @@
     if(profile.role === 'admin' || profile.role === 'team_management') return null;
     var vendor = vendorKey(profile.vendor_name);
     if(profile.role !== 'vendor' || !vendor) return 'Your account is not linked to a vendor yet. Ask an admin to assign it.';
-    if(vendor !== PORTAL_VENDOR) return 'Your dashboard is being set up: data for your components is not on the portal yet. We will let you know when it is ready.';
+    if(!VENDOR_DATASET[vendor]) return 'Your dashboard is being set up: data for your components is not on the portal yet. We will let you know when it is ready.';
     return null;
   }
   function vendorKey(name){ return (name || '').trim().toLowerCase(); }
@@ -667,7 +774,7 @@
   function loadVendorTabs(vendor){
     return sb.from('vendor_access').select('tabs').eq('vendor_name', vendor).maybeSingle().then(function(res){
       if(res.error){
-        if(res.error.code === 'PGRST205' || res.error.code === '42P01') return ALL_TABS;
+        if(res.error.code === 'PGRST205' || res.error.code === '42P01') return DATASETS[VENDOR_DATASET[vendor]].tabs;
         throw res.error;
       }
       return (res.data && res.data.tabs) || [];
@@ -683,7 +790,9 @@
         var problem = accessProblem(profile);
         if(problem || profile.role !== 'vendor') return problem;
         return loadVendorTabs(vendorKey(profile.vendor_name)).then(function(tabs){
-          viewTabs = ALL_TABS.filter(function(t){ return tabs.indexOf(t) >= 0; });
+          var dataset = VENDOR_DATASET[vendorKey(profile.vendor_name)];
+          currentDataset = dataset;
+          viewTabs = DATASETS[dataset].tabs.filter(function(t){ return tabs.indexOf(t) >= 0; });
           return viewTabs.length ? null : 'No dashboard tables have been assigned to your account yet. Ask an admin.';
         });
       })
@@ -691,7 +800,10 @@
         if(problem){
           return sb.auth.signOut().then(function(){ showLogin(); showLoginError(problem); });
         }
-        if(profile.role !== 'vendor') viewTabs = ALL_TABS;
+        if(profile.role !== 'vendor'){
+          viewTabs = ALL_TABS;
+          currentDataset = document.getElementById('vendorSel').value;
+        }
         previewVendor = null;
         loginError.hidden = true;
         loginScreen.hidden = true;
@@ -703,8 +815,11 @@
         currentRole = profile.role;
         currentEmail = session.user.email;
         document.getElementById('accessBtn').hidden = currentRole !== 'admin';
+        document.getElementById('vendorControl').hidden = currentRole === 'vendor';
         return loadModeration().then(function(){
           initDashboard();
+          return loadDataset(currentDataset);
+        }).then(function(){
           applyRoleViews();
         });
       });
@@ -879,7 +994,8 @@
     accessList.innerHTML = '';
     if(!vendors.length) accessList.appendChild(el('div', 'access-msg', 'No vendor accounts yet.'));
     vendors.forEach(function(v){
-      var hasData = v.key === PORTAL_VENDOR;
+      var dataset = VENDOR_DATASET[v.key];
+      var hasData = !!dataset;
       var card = el('div', 'access-vendor');
       var head = el('div', 'access-vendor-head');
       var who = el('div');
@@ -887,24 +1003,25 @@
       who.appendChild(el('div', 'access-logins', v.emails.length ? v.emails.join(', ') : 'No logins linked'));
       head.appendChild(who);
       head.appendChild(el('span', 'badge status ' + (hasData ? 'st-good' : 'st-none'),
-        hasData ? 'Data on portal · RO Membrane' : 'No data on portal yet'));
+        hasData ? DATASETS[dataset].status : 'No data on portal yet'));
       card.appendChild(head);
 
       var tabsRow = el('div', 'access-tabs');
-      var boxes = ALL_TABS.map(function(t){
+      // A vendor with no data yet has no tables to choose from
+      var boxes = (hasData ? DATASETS[dataset].tabs : []).map(function(t){
         var label = el('label');
         var box = el('input'); box.type = 'checkbox'; box.value = t; box.checked = v.tabs.indexOf(t) >= 0;
         label.appendChild(box); label.appendChild(document.createTextNode(TAB_LABELS[t]));
         tabsRow.appendChild(label);
         return box;
       });
-      card.appendChild(tabsRow);
+      if(hasData) card.appendChild(tabsRow);
 
       var actions = el('div', 'access-actions');
       var saveBtn = el('button', 'btn-ghost', 'Save');
       var previewBtn = el('button', 'btn-ghost', 'Preview as ' + v.name);
       var msg = el('span', 'access-msg', hasData ? '' : 'Vendor can’t sign in until their data is added to the portal.');
-      previewBtn.disabled = !hasData;
+      previewBtn.disabled = saveBtn.disabled = !hasData;
       actions.appendChild(saveBtn); actions.appendChild(previewBtn); actions.appendChild(msg);
       card.appendChild(actions);
       function checked(){ return boxes.filter(function(b){ return b.checked; }).map(function(b){ return b.value; }); }
@@ -920,10 +1037,10 @@
       });
       // Preview uses the boxes as ticked now, saved or not
       previewBtn.addEventListener('click', function(){
-        previewVendor = { key: v.key, name: v.name };
+        previewVendor = { key: v.key, name: v.name, dataset: dataset };
         viewTabs = checked();
         accessDialog.close();
-        applyRoleViews();
+        showDataset(dataset);
       });
       accessList.appendChild(card);
     });
@@ -963,8 +1080,43 @@
   document.getElementById('previewExit').addEventListener('click', function(){
     previewVendor = null;
     viewTabs = ALL_TABS;
-    applyRoleViews();
+    showDataset(document.getElementById('vendorSel').value);
   });
+
+  // ---------- Datasets ----------
+  // Ronch's data is a separate file, fetched only when someone opens the Ronch dashboard
+  var ronchLoad = null;
+  function loadDataset(name){
+    if(name !== 'ronch' || window.MW_RONCH) return Promise.resolve();
+    if(!ronchLoad) ronchLoad = new Promise(function(resolve, reject){
+      var tag = document.createElement('script');
+      tag.src = 'ronch-data.js';
+      tag.onload = resolve;
+      tag.onerror = function(){ ronchLoad = null; reject(new Error('Could not load the Ronch data file. Reload the page to try again.')); };
+      document.head.appendChild(tag);
+    });
+    return ronchLoad;
+  }
+  function showDataset(name){
+    currentDataset = name;
+    return loadDataset(name).catch(function(err){
+      document.getElementById('ronchBanner').textContent = err.message;
+    }).then(applyRoleViews);
+  }
+  document.getElementById('vendorSel').addEventListener('change', function(){ showDataset(this.value); });
+
+  var vontronFooter = document.getElementById('pageFooter').textContent;
+  function applyDataset(){
+    document.querySelectorAll('[data-dataset]:not(.tab-btn)').forEach(function(e){
+      e.hidden = e.getAttribute('data-dataset') !== currentDataset;
+    });
+    if(currentDataset !== 'vontron') document.getElementById('coverageDetail').hidden = true;
+    document.querySelector('.vendor-chip').lastChild.textContent = DATASETS[currentDataset].chip;
+    document.getElementById('pageFooter').textContent = currentDataset === 'ronch'
+      ? 'Membrane Watch · Ronch warranty debit note · Urban Company — revisits in September 2026, any machine production/install date. Part-cost gaps are disclosed in the debit note, not hidden.'
+      : vontronFooter;
+    applyControls();
+  }
 
   function showResetForm(){
     appEl.hidden = true;
@@ -992,15 +1144,16 @@
   // Show only the tables in viewTabs; keep the open one if still allowed
   function applyTabs(){
     var active = document.querySelector('.tab-btn.active');
-    tabButtons.forEach(function(b){ b.hidden = viewTabs.indexOf(b.getAttribute('data-tab')) < 0; });
-    document.getElementById('tabs').hidden = !viewTabs.length;
-    document.getElementById('noTabsNote').hidden = viewTabs.length > 0;
-    if(!viewTabs.length){
+    var shown = DATASETS[currentDataset].tabs.filter(function(t){ return viewTabs.indexOf(t) >= 0; });
+    tabButtons.forEach(function(b){ b.hidden = shown.indexOf(b.getAttribute('data-tab')) < 0; });
+    document.getElementById('tabs').hidden = !shown.length;
+    document.getElementById('noTabsNote').hidden = shown.length > 0;
+    if(!shown.length){
       document.querySelectorAll('.panel').forEach(function(p){ p.hidden = true; });
       return;
     }
     if(!active || active.hidden || document.querySelectorAll('.panel:not([hidden])').length === 0){
-      document.querySelector('.tab-btn[data-tab="' + viewTabs[0] + '"]').click();
+      document.querySelector('.tab-btn[data-tab="' + shown[0] + '"]').click();
     }
   }
 
@@ -1018,7 +1171,8 @@
 
   // A vendor, or an admin previewing as one
   function viewingAsVendor(){ return currentRole === 'vendor' || !!previewVendor; }
-  function pctOnly(){ return viewingAsVendor(); }
+  // Vontron's vendors see rates only; Ronch's debit note is in rupees and counts by nature
+  function pctOnly(){ return viewingAsVendor() && currentDataset === 'vontron'; }
 
   function metricCell(count, denom, mode, maxRate){
     if(pctOnly()) mode = 'pct';
@@ -1197,10 +1351,12 @@
   // Only admins may switch to the city breakdown; everyone else sees states
   function applyRoleViews(){
     var canSeeCities = currentRole === 'admin' && !previewVendor;
+    applyDataset();
     applyTabs();
     document.getElementById('previewBanner').hidden = !previewVendor;
     if(previewVendor) document.getElementById('previewText').textContent = 'Previewing as ' + previewVendor.name + ': ' +
       (viewTabs.length ? viewTabs.map(function(t){ return TAB_LABELS[t]; }).join(', ') : 'no tables assigned');
+    if(currentDataset === 'ronch') renderRonch();
     document.body.classList.toggle('pct-only', pctOnly());
     document.getElementById('geoLevel').hidden = !canSeeCities;
     if(!canSeeCities) setGeoLevel('state');
@@ -1676,6 +1832,323 @@
       banner.dataset.wired = '1';
       banner.addEventListener('click', function(){ detailEl.hidden = !detailEl.hidden; });
     }
+  }
+
+  // ---------- Ronch: warranty debit note ----------
+  // Rows come from ronch-data.js (scripts/build-ronch-data.py, built from debit-note-ronch.html).
+  // One row per invoiced part or non-spare issue on a September-2026 revisit.
+  var R = null;
+  var RC = {}; // column name -> index
+  var rState = { type:'spare', comp:'', svc:'with', r_cohort:'abs', r_sku:'abs',
+    rows:{ barcode:'', sku:'', prod:'', within:'', l1:'' } };
+  var TENURE_MAX = [30, 60, 180, 365, Infinity]; // ≤1m, 1–2m, 2–6m, 6–12m, 12m+ (days from install)
+  var RONCH_ROW_LIMIT = 500;
+  var vontronControls = null; // Vontron's dropdown options, restored when switching back
+
+  function rv(r, c){ return r[RC[c]]; }
+  // Debit counts chargeable lines in the production quarters the note bills
+  function rBilled(r){ return rv(r, 'within') === 1 && R.meta.billed_quarters.indexOf(rv(r, 'quarter')) >= 0; }
+  function rDebit(r){ return rBilled(r) ? rv(r, 'part') + rv(r, 'svc') : 0; }
+  function rTenureIdx(days){ for(var i = 0; i < TENURE_MAX.length; i++){ if(days <= TENURE_MAX[i]) return i; } return TENURE_MAX.length - 1; }
+  function fmtRs(n, dp){ return '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 }); }
+  function rSelected(){
+    return R.rows.filter(function(r){ return rv(r, 'type') === rState.type && (!rState.comp || rv(r, 'component') === rState.comp); });
+  }
+  function rSelectionLabel(){ return (rState.type === 'spare' ? 'Spare' : 'Non-spare') + ' · ' + (rState.comp || 'all components'); }
+  function rCell(text, cls){ var td = el('td', cls || 'tnum', text); return td; }
+  function rHeat(value, max, text){
+    var td = el('td', 'metric tnum');
+    var span = el('span', 'cellwrap', text);
+    span.style.background = seqStep(max > 0 ? Math.min(1, value / max) : 0);
+    td.appendChild(span);
+    return td;
+  }
+  function rFillSelect(id, values, label){
+    var sel = document.getElementById(id);
+    values.forEach(function(v){ var o = el('option', null, label ? label(v) : v); o.value = v; sel.appendChild(o); });
+  }
+  function rDistinct(col){
+    var seen = {};
+    R.rows.forEach(function(r){ var v = rv(r, col); if(v != null && v !== '') seen[v] = true; });
+    return Object.keys(seen).sort();
+  }
+
+  function rInit(){
+    if(R || !window.MW_RONCH) return;
+    R = window.MW_RONCH;
+    R.cols.forEach(function(c, i){ RC[c] = i; });
+    var skus = rDistinct('sku');
+    rFillSelect('rCohortSku', skus);
+    rFillSelect('rfSku', skus);
+    rFillSelect('rfProd', rDistinct('prod_month').reverse());
+    rFillSelect('rfL1', rDistinct('l1'));
+    document.getElementById('rCohortSku').addEventListener('change', renderRonchCohort);
+    document.getElementById('rfBarcode').addEventListener('input', function(){ rState.rows.barcode = this.value.trim().toUpperCase(); renderRonchRows(); });
+    [['rfSku','sku'], ['rfProd','prod'], ['rfWithin','within'], ['rfL1','l1']].forEach(function(f){
+      document.getElementById(f[0]).addEventListener('change', function(){ rState.rows[f[1]] = this.value; renderRonchRows(); });
+    });
+    document.querySelectorAll('#rSvcSeg button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('#rSvcSeg button').forEach(function(b){ b.classList.toggle('active', b === btn); });
+        rState.svc = btn.getAttribute('data-svc');
+        renderRonchSummary();
+      });
+    });
+    document.querySelectorAll('.seg[data-rseg]').forEach(function(seg){
+      var key = seg.getAttribute('data-rseg');
+      seg.querySelectorAll('button').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b === btn); });
+          rState[key] = btn.getAttribute('data-mode');
+          if(key === 'r_cohort') renderRonchCohort(); else renderRonchSku();
+        });
+      });
+    });
+  }
+
+  // Defect type / component dropdowns: Vontron's are fixed; Ronch's list the debit note's components
+  var typeSel = document.getElementById('defectType');
+  var compSel = document.getElementById('component');
+  function applyControls(){
+    if(!vontronControls) vontronControls = { type: typeSel.innerHTML, comp: compSel.innerHTML };
+    rInit();
+    if(currentDataset !== 'ronch' || !R){
+      typeSel.innerHTML = vontronControls.type;
+      compSel.innerHTML = vontronControls.comp;
+      return;
+    }
+    typeSel.innerHTML = '<option value="spare">Spare defect</option><option value="nonspare">Non-spare defect</option>';
+    typeSel.value = rState.type;
+    rFillComponents();
+  }
+  function rFillComponents(){
+    var counts = {};
+    R.rows.forEach(function(r){ if(rv(r, 'type') === rState.type) counts[rv(r, 'component')] = (counts[rv(r, 'component')] || 0) + 1; });
+    var comps = Object.keys(counts).sort(function(a, b){ return counts[b] - counts[a]; });
+    if(comps.indexOf(rState.comp) < 0) rState.comp = '';
+    compSel.innerHTML = '';
+    var all = el('option', null, 'All components'); all.value = ''; compSel.appendChild(all);
+    comps.forEach(function(c){ var o = el('option', null, c); o.value = c; compSel.appendChild(o); });
+    compSel.value = rState.comp;
+  }
+  typeSel.addEventListener('change', function(){
+    if(currentDataset !== 'ronch' || !R) return;
+    rState.type = typeSel.value;
+    rState.comp = '';
+    rFillComponents();
+    renderRonch();
+  });
+  compSel.addEventListener('change', function(){
+    if(currentDataset !== 'ronch' || !R) return;
+    rState.comp = compSel.value;
+    renderRonch();
+  });
+
+  function renderRonch(){
+    if(!R) return;
+    var banner = document.getElementById('ronchBanner');
+    banner.textContent = R.meta.note_title + ' — any production/install date, ' + fmtInt(R.meta.cohort_size) +
+      ' machines revisited. Chargeable windows from install: spares 365 days, filters 30 days, non-spare service 180 days.';
+    banner.title = R.meta.methodology + '\n\n' + R.meta.known_gaps;
+    renderRonchSummary();
+    renderRonchComponents();
+    renderRonchCohort();
+    renderRonchSku();
+    renderRonchRows();
+  }
+
+  function renderRonchSummary(){
+    var sel = rSelected();
+    var note = R.with_service.rows, noteNo = R.without_service.rows;
+    var chargeable = sel.filter(function(r){ return rv(r, 'within') === 1; }).length;
+    var debit = sel.reduce(function(a, r){ return a + rDebit(r); }, 0);
+    var stats = document.getElementById('rSummaryStats');
+    stats.innerHTML = '';
+    function tile(label, value, foot){
+      var t = el('div', 'stat-tile');
+      t.appendChild(el('div', 'label', label));
+      t.appendChild(el('div', 'value tnum', value));
+      t.appendChild(el('div', 'foot', foot));
+      stats.appendChild(t);
+    }
+    tile('Total debit (with service)', fmtRs(note[note.length - 1][note[0].length - 1]), 'Whole note, Sept-26 revisits');
+    tile('Total debit (without service)', fmtRs(noteNo[noteNo.length - 1][noteNo[0].length - 1]), 'Part cost only');
+    tile('Selection debit', fmtRs(debit), rSelectionLabel());
+    tile('Selection line items', fmtInt(sel.length), fmtInt(chargeable) + ' chargeable (' + fmt1(pct(chargeable, sel.length)) + '%)');
+
+    var src = rState.svc === 'with' ? R.with_service : R.without_service;
+    var thead = document.querySelector('#rNoteTable thead'), tbody = document.querySelector('#rNoteTable tbody');
+    thead.innerHTML = ''; tbody.innerHTML = '';
+    var trh = el('tr');
+    src.header.forEach(function(h){ trh.appendChild(el('th', null, h)); });
+    thead.appendChild(trh);
+    src.rows.forEach(function(r, ri){
+      var tr = el('tr');
+      r.forEach(function(v, i){ tr.appendChild(i === 0 ? rCell(v, 'rowlabel') : rCell(fmtRs(v, 2))); });
+      if(ri === src.rows.length - 1) tr.style.fontWeight = '800';
+      tbody.appendChild(tr);
+    });
+
+    var qs = R.meta.billed_quarters;
+    var lines = { part: qs.map(function(){ return 0; }), svc: qs.map(function(){ return 0; }) };
+    sel.forEach(function(r){
+      if(!rBilled(r)) return;
+      var qi = qs.indexOf(rv(r, 'quarter'));
+      lines.part[qi] += rv(r, 'part');
+      lines.svc[qi] += rv(r, 'svc');
+    });
+    document.getElementById('rSelTitle').textContent = rSelectionLabel() + ', by production quarter';
+    thead = document.querySelector('#rSelTable thead'); tbody = document.querySelector('#rSelTable tbody');
+    thead.innerHTML = ''; tbody.innerHTML = '';
+    trh = el('tr');
+    ['Line item'].concat(qs, ['Total']).forEach(function(h){ trh.appendChild(el('th', null, h)); });
+    thead.appendChild(trh);
+    function sum(a){ return a.reduce(function(x, y){ return x + y; }, 0); }
+    [['Part cost', lines.part], ['Service cost', lines.svc],
+     ['Total debit', lines.part.map(function(v, i){ return v + lines.svc[i]; })]].forEach(function(line, li){
+      var tr = el('tr');
+      tr.appendChild(rCell(line[0], 'rowlabel'));
+      line[1].concat([sum(line[1])]).forEach(function(v){ tr.appendChild(rCell(fmtRs(v, 2))); });
+      if(li === 2) tr.style.fontWeight = '800';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderRonchComponents(){
+    var by = {};
+    R.rows.forEach(function(r){
+      if(rv(r, 'type') !== rState.type) return;
+      var c = rv(r, 'component');
+      var g = by[c] = by[c] || { comp: c, n: 0, within: 0, part: 0, svc: 0 };
+      g.n++;
+      if(rv(r, 'within') === 1) g.within++;
+      if(rBilled(r)){ g.part += rv(r, 'part'); g.svc += rv(r, 'svc'); }
+    });
+    var groups = Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return b.n - a.n; });
+    var maxN = groups.reduce(function(m, g){ return Math.max(m, g.n); }, 0);
+    var cohort = R.meta.cohort_size;
+    document.getElementById('rCompTitle').textContent = (rState.type === 'spare' ? 'Spare' : 'Non-spare') + ' components';
+    document.getElementById('rCompHint').textContent = 'Click a row to select that component';
+    var tbody = document.querySelector('#rCompTable tbody'), tfoot = document.querySelector('#rCompTable tfoot');
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+    var tot = { n: 0, within: 0, part: 0, svc: 0 };
+    groups.forEach(function(g){
+      var tr = el('tr', 'r-click' + (g.comp === rState.comp ? ' r-selected' : ''));
+      tr.appendChild(rCell(g.comp, 'rowlabel'));
+      tr.appendChild(rHeat(g.n, maxN, fmtInt(g.n)));
+      tr.appendChild(rCell(fmt1(pct(g.n, cohort)) + '%'));
+      tr.appendChild(rCell(fmtInt(g.within)));
+      tr.appendChild(rCell(fmtRs(g.part)));
+      tr.appendChild(rCell(fmtRs(g.svc)));
+      tr.appendChild(rCell(fmtRs(g.part + g.svc)));
+      tr.addEventListener('click', function(){
+        rState.comp = rState.comp === g.comp ? '' : g.comp;
+        compSel.value = rState.comp;
+        renderRonch();
+      });
+      tbody.appendChild(tr);
+      ['n', 'within', 'part', 'svc'].forEach(function(k){ tot[k] += g[k]; });
+    });
+    var tr = el('tr');
+    [rCell('Overall'), rCell(fmtInt(tot.n)), rCell(fmt1(pct(tot.n, cohort)) + '%'), rCell(fmtInt(tot.within)),
+     rCell(fmtRs(tot.part)), rCell(fmtRs(tot.svc)), rCell(fmtRs(tot.part + tot.svc))].forEach(function(td){ tr.appendChild(td); });
+    tfoot.appendChild(tr);
+  }
+
+  // Tenure table: one row per group (production month or model), tenure buckets across
+  function rTenureTable(tableId, rows, keyOf, order, mode){
+    var by = {};
+    rows.forEach(function(r){
+      var k = keyOf(r);
+      var g = by[k] = by[k] || { key: k, b: [0, 0, 0, 0, 0], n: 0, within: 0, debit: 0 };
+      g.b[rTenureIdx(rv(r, 'tenure'))]++;
+      g.n++;
+      if(rv(r, 'within') === 1) g.within++;
+      g.debit += rDebit(r);
+    });
+    var groups = Object.keys(by).sort(order).map(function(k){ return by[k]; });
+    var max = 0;
+    groups.forEach(function(g){ g.b.forEach(function(v){ max = Math.max(max, mode === 'pct' ? pct(v, g.n) : v); }); });
+    var tbody = document.querySelector('#' + tableId + ' tbody'), tfoot = document.querySelector('#' + tableId + ' tfoot');
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+    var tot = { b: [0, 0, 0, 0, 0], n: 0, within: 0, debit: 0 };
+    function row(label, g, heat){
+      var tr = el('tr');
+      tr.appendChild(rCell(label, heat ? 'rowlabel' : null));
+      g.b.forEach(function(v){
+        var shown = mode === 'pct' ? pct(v, g.n) : v;
+        var text = mode === 'pct' ? fmt1(shown) + '%' : fmtInt(v);
+        tr.appendChild(heat ? rHeat(shown, max, text) : rCell(text));
+      });
+      tr.appendChild(rCell(fmtInt(g.n), 'tnum total-col'));
+      tr.appendChild(rCell(fmtInt(g.within)));
+      tr.appendChild(rCell(fmtRs(g.debit)));
+      return tr;
+    }
+    groups.forEach(function(g){
+      tbody.appendChild(row(g.key, g, true));
+      g.b.forEach(function(v, i){ tot.b[i] += v; });
+      tot.n += g.n; tot.within += g.within; tot.debit += g.debit;
+    });
+    if(groups.length) tfoot.appendChild(row('Overall', tot, false));
+    if(!groups.length){
+      var tr = el('tr'); var td = el('td', 'na', 'No lines for this selection.'); td.colSpan = 9; tr.appendChild(td); tbody.appendChild(tr);
+    }
+  }
+
+  function renderRonchCohort(){
+    var sku = document.getElementById('rCohortSku').value;
+    var rows = rSelected().filter(function(r){ return !sku || rv(r, 'sku') === sku; });
+    rTenureTable('rCohortTable', rows, function(r){ return rv(r, 'prod_month') || 'Unknown'; }, function(a, b){
+      if(a === 'Unknown') return 1;
+      if(b === 'Unknown') return -1;
+      return a < b ? 1 : a > b ? -1 : 0;
+    }, rState.r_cohort);
+    document.getElementById('rCohortNote').textContent = rSelectionLabel() + '. Production month is decoded from the machine barcode, for traceability; ' +
+      'it does not drive pricing. Debit covers chargeable lines in the production quarters the note bills (' +
+      R.meta.billed_quarters[0] + ' to ' + R.meta.billed_quarters[R.meta.billed_quarters.length - 1] + ').';
+  }
+
+  function renderRonchSku(){
+    rTenureTable('rSkuTable', rSelected(), function(r){ return rv(r, 'sku') || 'Unknown'; }, function(a, b){ return a < b ? -1 : a > b ? 1 : 0; }, rState.r_sku);
+  }
+
+  var RONCH_ROW_COLS = [
+    ['Machine barcode', 'barcode'], ['Model', 'sku'], ['Production month', 'prod_month'], ['Installed', 'install_date'],
+    ['Revisit', 'revisit_date'], ['Tenure (days)', 'tenure'], ['Item / issue', 'item'], ['Component', 'component'],
+    ['Group', 'group'], ['Within window', 'within'], ['Part cost', 'part'], ['Service cost', 'svc'],
+    ['L1 reason', 'l1'], ['L2 reason', 'l2']
+  ];
+  var RONCH_NUM_COLS = ['tenure', 'part', 'svc'];
+  function renderRonchRows(){
+    var f = rState.rows;
+    var all = rSelected();
+    var rows = all.filter(function(r){
+      if(f.barcode && (rv(r, 'barcode') || '').toUpperCase().indexOf(f.barcode) < 0) return false;
+      if(f.sku && rv(r, 'sku') !== f.sku) return false;
+      if(f.prod && rv(r, 'prod_month') !== f.prod) return false;
+      if(f.within !== '' && String(rv(r, 'within')) !== f.within) return false;
+      if(f.l1 && rv(r, 'l1') !== f.l1) return false;
+      return true;
+    });
+    document.getElementById('rRowCount').textContent = 'Showing ' + fmtInt(Math.min(rows.length, RONCH_ROW_LIMIT)) + ' of ' + fmtInt(rows.length) +
+      ' lines' + (rows.length > RONCH_ROW_LIMIT ? ' (narrow with filters to see the rest)' : '') + ' · ' + rSelectionLabel();
+    var thead = document.querySelector('#rRowsTable thead'), tbody = document.querySelector('#rRowsTable tbody');
+    thead.innerHTML = ''; tbody.innerHTML = '';
+    var trh = el('tr');
+    RONCH_ROW_COLS.forEach(function(c){ trh.appendChild(el('th', RONCH_NUM_COLS.indexOf(c[1]) < 0 ? 'r-txt' : null, c[0])); });
+    thead.appendChild(trh);
+    rows.slice(0, RONCH_ROW_LIMIT).forEach(function(r){
+      var tr = el('tr');
+      RONCH_ROW_COLS.forEach(function(c, i){
+        var v = rv(r, c[1]);
+        var text = c[1] === 'part' || c[1] === 'svc' ? fmtRs(v, 2)
+          : c[1] === 'within' ? (v === 1 ? 'Yes' : 'No')
+          : (v == null || v === '' ? '—' : String(v));
+        tr.appendChild(rCell(text, i === 0 ? 'rowlabel mono' : RONCH_NUM_COLS.indexOf(c[1]) < 0 ? 'r-txt' : null));
+      });
+      tbody.appendChild(tr);
+    });
   }
 
   function renderAll(){

@@ -116,6 +116,19 @@ Vontron's data, so other vendors stay blocked ("dashboard is being set up")
 until their data is added. Hiding tables is a display rule only: every table's
 data still ships inside the page.
 
+**Ronch dashboard (warranty debit note).** The portal carries a second dataset:
+Ronch's September-2026 warranty debit note. The Ronch login (vendor_name `Ronch`, or
+`Siddharth` for now) lands on it; admins and team management switch with the
+*Vendor* dropdown. Defect type (Spare / Non-spare) and Component (every component in
+the note) both filter five tables: Debit Note, Components, Production Cohort, By
+Model and Revisit Detail. The data lives in `ronch-data.js`, loaded only when the
+Ronch dashboard opens, and is rebuilt from `debit-note-ronch.html` with
+`python3 scripts/build-ronch-data.py`. Chargeable lines in the billed production
+quarters reconcile to the note to the paisa (Rs 20,58,155.88, plus Rs 49,079.46
+install-time replacement billed separately = Rs 21,07,235.34). Run
+`supabase/migrations/004_ronch_tabs.sql` so these tables can be assigned in
+Vendor access.
+
 **Cross-validated against true production records (2026-09-30):** every
 number below has now been checked against Ronch's own production log (a
 separate Google Sheet, not UC's warehouse) — genuinely independent evidence,
