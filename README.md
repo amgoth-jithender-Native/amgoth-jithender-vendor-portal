@@ -64,6 +64,16 @@ user already ran) — seeds the 22 non-RO-Membrane components and grants
 Vontron access to all 23 components × the same 4 funnels (no `F_PRESSURE`).
 Kept every line short after the `006` paste-truncation incident.
 
+**In the main portal (`index.html`):** under Vendor = Vontron, the Component
+filter lists RO Membrane plus every component the login is granted
+(`vendor_component_access`; staff see all). RO Membrane keeps the original
+Ronch/Amber pilot data; any other component fills the same four tabs (Install
+Cohort, Geography, Water Quality, Row-Level Detail) from `component-data.js`,
+loaded only when first picked. Vendors see rates only and states, not cities,
+same as the RO Membrane view. `component-data.js` is generated from
+`component-analysis.html`: re-run `python3 scripts/extract-component-data.py`
+whenever that page's data is rebuilt.
+
 **Master query (Phase 1), run directly on Jarvis, not a round-trip hand-off:**
 all-time Native RO install base (**489,909 installs**, no date floor — scan-
 verified barcode tracking goes back further than previously known, to Sep

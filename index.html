@@ -264,6 +264,10 @@
   td.total-col .cellwrap{ font-weight:800; }
   /* Vendors see rates only: no counts, no Absolute toggle */
   body.pct-only .abs-col, body.pct-only .seg[data-seg]{ display:none !important; }
+  /* Vontron tabs: RO Membrane content normally; .v3-block instead when another component is picked */
+  .v3-block{ display:flex; flex-direction:column; gap:18px; }
+  body:not(.v3-comp) .v3-block{ display:none !important; }
+  body.v3-comp .panel[data-v3] > :not(.v3-block), body.v3-comp #coverageBanner, body.v3-comp #coverageDetail{ display:none !important; }
 
   .badge{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:0.72rem; font-weight:700; border:1px solid transparent; }
   .badge.soldto{ background:var(--surface-2); color:var(--ink-2); border-color:var(--border); font-family:var(--font-mono); font-weight:500; }
@@ -438,7 +442,7 @@
     <div class="control" id="vendorControl" hidden>
       <label for="vendorSel">Vendor</label>
       <select id="vendorSel" class="pill-select">
-        <option value="vontron">Vontron · RO Membrane</option>
+        <option value="vontron">Vontron</option>
         <option value="ronch">Ronch · Warranty debit note</option>
         <option value="amber">Amber · Warranty debit note</option>
       </select>
@@ -474,14 +478,13 @@
     <button class="tab-btn" data-kind="debit" data-tab="r_cohort" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 12.5V2M1.5 12.5H13.5M4.5 12.5V8M8 12.5V5M11.5 12.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Install Cohort</button>
     <button class="tab-btn" data-kind="debit" data-tab="r_sku" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="8.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>By Model</button>
     <button class="tab-btn" data-kind="debit" data-tab="r_rows" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12M5.5 6v6.5" stroke="currentColor" stroke-width="1.2"/></svg>Revisit Detail</button>
-    <button class="tab-btn" data-tab="components" hidden><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><circle cx="7.5" cy="7.5" r="2.2" stroke="currentColor" stroke-width="1.3"/></svg>Component Analysis</button>
   </nav>
 
   <main>
     <div class="card" id="noTabsNote" hidden><div class="table-note">No tables are assigned to this vendor yet. An admin can assign them under Vendor access.</div></div>
 
     <!-- FUNNEL 1: Install cohort (production-month axis retired 2026-10-15) -->
-    <section class="panel" data-panel="cohort">
+    <section class="panel" data-v3 data-panel="cohort">
       <div class="stat-row" id="cohortStats"></div>
       <div class="panel-toolbar">
         <div class="filters">
@@ -510,10 +513,33 @@
           <div class="legend-swatch">Lower defect rate<div class="legend-ramp"><span style="background:var(--seq-1)"></span><span style="background:var(--seq-2)"></span><span style="background:var(--seq-3)"></span><span style="background:var(--seq-4)"></span><span style="background:var(--seq-5)"></span><span style="background:var(--seq-6)"></span></div>Higher defect rate</div>
         </div>
       </div>
+      <!-- Any component other than RO Membrane (component-data.js) -->
+      <div class="v3-block">
+        <div class="stat-row" id="v3Stats"></div>
+        <div class="panel-toolbar"><div></div><div class="seg" data-seg="v3cohort"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">Percentage</button></div></div>
+        <div class="card">
+          <div class="card-head"><h2>Defect rate by install month</h2><span class="hint">Tenure buckets measure days from install to the replacement</span></div>
+          <div class="table-wrap"><table id="v3CohortTable"><thead></thead><tbody></tbody></table></div>
+          <div class="table-note">Last 18 install months, all manufacturers. A dash means that window hasn't fully matured for the cohort's newest machines yet.</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>By manufacturer</h2></div>
+          <div class="table-wrap"><table id="v3MfgTable"><thead></thead><tbody></tbody></table></div>
+          <div class="table-note">"No barcode match" machines are much older on average, so their higher lifetime rate reflects longer use, not necessarily worse build quality.</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Repeat replacements</h2></div>
+          <div class="stat-row" id="v3Repeat" style="padding:14px 18px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Known gaps</h2></div>
+          <ul id="v3Gaps" style="margin:0; padding:14px 32px; font-size:0.82rem; color:var(--ink-2); line-height:1.55;"></ul>
+        </div>
+      </div>
     </section>
 
     <!-- FUNNEL 2: Geography -->
-    <section class="panel" data-panel="geo" hidden>
+    <section class="panel" data-v3 data-panel="geo" hidden>
       <div class="stat-row" id="geoStats"></div>
       <div class="panel-toolbar">
         <div class="filters">
@@ -535,10 +561,18 @@
           </table>
         </div>
       </div>
+      <div class="v3-block">
+        <div class="panel-toolbar"><div></div><div class="seg" data-seg="v3geo"><button class="active" data-mode="abs">Absolute</button><button data-mode="pct">Percentage</button></div></div>
+        <div class="card">
+          <div class="card-head"><h2 id="v3GeoTitle">Defect rate by state</h2><span class="rowcount" id="v3GeoCount"></span></div>
+          <div class="table-wrap" style="max-height:620px; overflow-y:auto;"><table id="v3GeoTable"><thead></thead><tbody></tbody></table></div>
+          <div class="table-note">All-time install base, all manufacturers.</div>
+        </div>
+      </div>
     </section>
 
     <!-- FUNNEL 3: TDS -->
-    <section class="panel" data-panel="tds" hidden>
+    <section class="panel" data-v3 data-panel="tds" hidden>
       <div class="stat-row" id="tdsStats"></div>
       <div class="panel-toolbar">
         <div class="filters">
@@ -568,10 +602,13 @@
         </div>
         <div class="table-note" id="tdsNote"></div>
       </div>
+      <div class="v3-block">
+        <div id="v3Funnels" style="display:flex; flex-direction:column; gap:18px;"></div>
+      </div>
     </section>
 
     <!-- FUNNEL 4: Row level -->
-    <section class="panel" data-panel="rows" hidden>
+    <section class="panel" data-v3 data-panel="rows" hidden>
       <div class="panel-toolbar">
         <div class="filters">
           <select id="fProdMonth"><option value="">Production month: all</option></select>
@@ -592,6 +629,20 @@
             <thead><tr><th style="text-align:left">Spare barcode</th><th style="text-align:left">Production</th><th style="text-align:left">Installation</th><th style="text-align:left">Revisit</th><th style="text-align:left">Reason</th><th style="text-align:left">Sub-reason</th><th style="text-align:left">Sold to</th><th>Tenure</th><th style="text-align:left">TDS range</th><th style="text-align:left">Video proof</th></tr></thead>
             <tbody></tbody><tfoot></tfoot>
           </table>
+        </div>
+      </div>
+      <div class="v3-block">
+        <div class="card">
+          <div class="card-head"><h2>Replacement detail</h2><span class="rowcount" id="v3CaseCount"></span></div>
+          <div class="panel-toolbar" style="padding:12px 18px;">
+            <div class="filters">
+              <input type="text" id="v3Barcode" placeholder="Search machine barcode…">
+              <select id="v3Mfg"><option value="">Manufacturer: all</option></select>
+              <select id="v3RepeatSel"><option value="">Repeat: all</option><option value="No">First replacement</option><option value="Yes">Repeat</option></select>
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height:620px; overflow-y:auto;"><table id="v3CaseTable"><thead></thead><tbody></tbody></table></div>
+          <div class="table-note">Up to 1,000 sample rows per component. No customer details: the machine barcode is the only identifier.</div>
         </div>
       </div>
     </section>
@@ -677,12 +728,6 @@
           <table id="rRowsTable"><thead></thead><tbody></tbody></table>
         </div>
       </div>
-    </section>
-
-    <!-- Component Defect Analysis v3 (all components), embedded from component-analysis.html -->
-    <section class="panel" data-panel="components" hidden>
-      <div class="table-note" style="text-align:right;"><a href="component-analysis.html" target="_blank" rel="noopener">Open in a new tab ↗</a></div>
-      <iframe id="componentFrame" title="Component Defect Analysis" style="width:100%; min-height:900px; border:0; display:block;"></iframe>
     </section>
   </main>
 
@@ -797,13 +842,27 @@
     });
   }
 
-  // Component Analysis tab: staff always; a vendor only with a grant in vendor_component_access
-  // (006_component_access.sql). Missing table or no grant just hides the tab.
-  var compAccess = false;
+  // Components beyond RO Membrane in the Vontron view: staff get all of them; a vendor gets what
+  // vendor_component_access / vendor_funnel_access grant (006/007_*.sql). Missing tables mean none.
+  var V3_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_WATER'];
+  var compAccess = { comps: [], funnels: {} };
   function loadComponentAccess(profile){
-    if(profile.role !== 'vendor') return Promise.resolve(true);
-    return sb.from('vendor_component_access').select('component_id').eq('vendor_id', vendorKey(profile.vendor_name))
-      .eq('active', true).limit(1).then(function(res){ return !res.error && res.data.length > 0; });
+    if(profile.role !== 'vendor'){
+      var all = { comps: V3_COMPONENTS.map(function(c){ return c[0]; }), funnels: {} };
+      all.comps.forEach(function(c){ all.funnels[c] = V3_FUNNELS; });
+      return Promise.resolve(all);
+    }
+    var vendor = vendorKey(profile.vendor_name);
+    return Promise.all([
+      sb.from('vendor_component_access').select('component_id').eq('vendor_id', vendor).eq('active', true),
+      sb.from('vendor_funnel_access').select('component_id, funnel_code').eq('vendor_id', vendor).eq('active', true)
+    ]).then(function(r){
+      var got = { comps: [], funnels: {} };
+      if(r[0].error || r[1].error) return got;
+      got.comps = r[0].data.map(function(x){ return x.component_id; });
+      r[1].data.forEach(function(x){ (got.funnels[x.component_id] = got.funnels[x.component_id] || []).push(x.funnel_code); });
+      return got;
+    });
   }
 
   function enterWithSession(session){
@@ -841,9 +900,9 @@
         currentEmail = session.user.email;
         document.getElementById('accessBtn').hidden = currentRole !== 'admin';
         document.getElementById('vendorControl').hidden = currentRole === 'vendor';
-        resetComponentFrame();
-        return loadComponentAccess(profile).then(function(ok){
-          compAccess = ok;
+        v3Comp = null;
+        return loadComponentAccess(profile).then(function(access){
+          compAccess = access;
           return loadModeration();
         }).then(function(){
           initDashboard();
@@ -881,7 +940,6 @@
   });
 
   document.getElementById('logoutBtn').addEventListener('click', function(){
-    resetComponentFrame();
     sb.auth.signOut().then(showLogin, showLogin);
   });
 
@@ -1169,20 +1227,11 @@
       document.querySelectorAll('.panel').forEach(function(p){
         p.hidden = p.getAttribute('data-panel') !== target;
       });
-      if(target === 'components') openComponentFrame();
-      syncComponentControls();
     });
   });
 
-  // The embedded page has its own component picker, so the portal's filters step aside on that tab
-  function syncComponentControls(){
-    var onComp = !!document.querySelector('.tab-btn.active[data-tab="components"]');
-    ['defectType', 'component'].forEach(function(id){ document.getElementById(id).closest('.control').hidden = onComp; });
-    if(onComp) document.getElementById('periodControl').hidden = true;
-    else if(!isDebitView()) document.getElementById('component').value = 'ro_membrane'; // the Vontron tabs are RO Membrane only
-  }
-
-  // Components in component-analysis.html (ids from 006/007_*.sql), RO Membrane first
+  // Components in the Vontron view (ids from 006/007_*.sql), RO Membrane first. RO Membrane keeps the
+  // validated Ronch/Amber pilot data above; the rest come from component-data.js (all manufacturers).
   var V3_COMPONENTS = [['ro_membrane','RO Membrane'], ['sediment_filter','Sediment / Pre Filter'],
     ['tap_assembly','Tap / Faucet Assembly'], ['carbon_filter','Carbon / Health Booster Filter'],
     ['solenoid_valve','Solenoid Valve'], ['pcb','PCB'], ['pek_prv','Pressure Enhancing/Reducing Kit (PEK/PRV)'],
@@ -1193,51 +1242,10 @@
     ['tank_accessories','Tank / Accessories'], ['uf_filter','UF Filter'], ['ups','UPS'], ['back_panel','Back Panel'],
     ['membrane_housing','RO Membrane Housing']];
 
-  // Select a component in the embedded page once it has signed in and filled its picker
-  var frameWant = null, frameTimer = null;
-  function showComponentInFrame(id){
-    frameWant = id;
-    clearInterval(frameTimer);
-    var tries = 0;
-    frameTimer = setInterval(function(){
-      var doc = componentFrame.contentDocument;
-      var pick = doc && doc.getElementById('fComponent');
-      if(pick && pick.querySelector('option[value="' + frameWant + '"]')){
-        if(pick.value !== frameWant){ pick.value = frameWant; pick.dispatchEvent(new Event('change')); }
-        clearInterval(frameTimer);
-      } else if(++tries > 120) clearInterval(frameTimer);
-    }, 250);
-  }
-
-  // Loaded on first open (the page is ~8 MB) and dropped on login/logout so a new login never sees the last one's view.
-  // Same origin, so it reuses this page's Supabase session.
-  var componentFrame = document.getElementById('componentFrame');
-  var frameObserver = null;
-  function openComponentFrame(){
-    if(componentFrame.getAttribute('src')) return;
-    componentFrame.src = 'component-analysis.html?embed=1';
-  }
-  function resetComponentFrame(){
-    if(frameObserver){ frameObserver.disconnect(); frameObserver = null; }
-    clearInterval(frameTimer);
-    componentFrame.removeAttribute('src');
-    componentFrame.style.height = '';
-  }
-  componentFrame.addEventListener('load', function(){
-    var doc = componentFrame.contentDocument;
-    if(!doc || !componentFrame.getAttribute('src')) return;
-    function fit(){ componentFrame.style.height = doc.documentElement.scrollHeight + 'px'; }
-    if(frameObserver) frameObserver.disconnect();
-    frameObserver = new ResizeObserver(fit);
-    frameObserver.observe(doc.body);
-    fit();
-  });
-
   // Show only the tables in viewTabs; keep the open one if still allowed
   function applyTabs(){
     var active = document.querySelector('.tab-btn.active');
     var shown = DATASETS[currentDataset].tabs.filter(function(t){ return viewTabs.indexOf(t) >= 0; });
-    if(compAccess) shown.push('components');
     tabButtons.forEach(function(b){ b.hidden = shown.indexOf(b.getAttribute('data-tab')) < 0; });
     document.getElementById('tabs').hidden = !shown.length;
     document.getElementById('noTabsNote').hidden = shown.length > 0;
@@ -1248,7 +1256,6 @@
     if(!active || active.hidden || document.querySelectorAll('.panel:not([hidden])').length === 0){
       document.querySelector('.tab-btn[data-tab="' + shown[0] + '"]').click();
     }
-    syncComponentControls();
   }
 
   // ---------- Helpers ----------
@@ -2065,13 +2072,16 @@
     document.getElementById('periodControl').hidden = !debit || window.MW_DEBIT[currentDataset].periods.length < 2;
     if(!debit){
       typeSel.innerHTML = vontronControls.type;
-      // With Component Analysis access, every component is listed; anything but RO Membrane opens that tab
-      compSel.innerHTML = compAccess ? V3_COMPONENTS.map(function(c){
+      // RO Membrane plus every other component this login has been granted
+      var comps = V3_COMPONENTS.filter(function(c){ return c[0] === 'ro_membrane' || compAccess.comps.indexOf(c[0]) >= 0; });
+      compSel.innerHTML = comps.length > 1 ? comps.map(function(c){
         return '<option value="' + c[0] + '">' + c[1] + '</option>';
       }).join('') : vontronControls.comp;
-      compSel.value = 'ro_membrane';
+      if(v3Comp && compAccess.comps.indexOf(v3Comp) < 0) v3Comp = null;
+      compSel.value = v3Comp || 'ro_membrane';
       return;
     }
+    v3Comp = null;
     rWire();
     rUse(currentDataset);
     typeSel.innerHTML = '<option value="spare">Spare defect</option><option value="nonspare">Non-spare defect</option>';
@@ -2097,14 +2107,197 @@
   });
   compSel.addEventListener('change', function(){
     if(!isDebitView()){
-      if(compSel.value === 'ro_membrane') return;
-      showComponentInFrame(compSel.value);
-      document.querySelector('.tab-btn[data-tab="components"]').click();
+      v3Comp = compSel.value === 'ro_membrane' ? null : compSel.value;
+      if(!v3Comp) return renderAll();
+      v3Case = { barcode: '', mfg: '', repeat: '' };
+      document.getElementById('v3Barcode').value = '';
+      document.getElementById('v3RepeatSel').value = '';
+      document.getElementById('scopeBanner').textContent = 'Loading ' + compSel.options[compSel.selectedIndex].text + '…';
+      loadComponents().then(renderAll, function(err){ document.getElementById('scopeBanner').textContent = err.message; });
       return;
     }
     rState.comp = compSel.value;
     renderDebit();
   });
+
+  // ---------- Components other than RO Membrane (Vontron view) ----------
+  // Same four tabs, filled from component-data.js (all manufacturers, all-time install base).
+  // Vendors see rates only, and states rather than cities, as on the RO Membrane view.
+  var v3Comp = null;   // component on screen; null = RO Membrane
+  var v3Case = { barcode: '', mfg: '', repeat: '' };
+  var V3_BUCKETS = ['0-30', '31-90', '91-180', '181-240', '241-365', '>365'];
+  var V3_BUCKET_LABELS = ['0–30 days', '31–90 days', '91–180 days', '181–240 days', '241–365 days', '>365 days'];
+  var V3_FUNNEL_INFO = {
+    F_TDS_IN:  { key: 'f_tds_in',  title: 'Defects by average input TDS (ppm)', buckets: ['<200', '200-500', '500-1000', '1000-1500', '>1500', 'Non-smart / NA', 'No data'] },
+    F_TDS_OUT: { key: 'f_tds_out', title: 'Defects by average output TDS (ppm)', buckets: ['<50', '50-100', '100-150', '>150', 'Non-smart / NA', 'No data'] },
+    F_WATER:   { key: 'f_water',   title: 'Defects by daily water consumed (provisional units)', buckets: ['<500', '500-1000', '1000-2000', '2000-5000', '>5000', 'Non-smart / NA', 'No data'] }
+  };
+  var componentsLoad = null;
+  function loadComponents(){
+    if(window.MW_COMPONENTS) return Promise.resolve();
+    if(!componentsLoad) componentsLoad = new Promise(function(resolve, reject){
+      var tag = document.createElement('script');
+      tag.src = 'component-data.js';
+      tag.onload = resolve;
+      tag.onerror = function(){ componentsLoad = null; reject(new Error('Could not load the component data file. Reload the page to try again.')); };
+      document.head.appendChild(tag);
+    });
+    return componentsLoad;
+  }
+  function v3Data(){
+    return currentDataset === 'vontron' && v3Comp && window.MW_COMPONENTS ? window.MW_COMPONENTS.data[v3Comp] : null;
+  }
+  function v3Label(){ return (V3_COMPONENTS.filter(function(c){ return c[0] === v3Comp; })[0] || [v3Comp, v3Comp])[1]; }
+  function v3Head(tableId, labels){
+    var thead = document.querySelector('#' + tableId + ' thead'), tbody = document.querySelector('#' + tableId + ' tbody');
+    thead.innerHTML = ''; tbody.innerHTML = '';
+    var tr = el('tr');
+    labels.forEach(function(h){
+      var th = el('th', h.abs ? 'abs-col' : null, h.abs ? h.abs : h);
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    return tbody;
+  }
+  function v3Total(r){ return V3_BUCKETS.reduce(function(a, k){ return a + (r[k] || 0); }, 0); }
+  // One row: label, denominator (hidden from vendors), a cell per tenure bucket, and Overall
+  function v3TenureRow(tbody, label, r, mode, maxRate, maxTotal){
+    var tr = el('tr');
+    tr.appendChild(el('td', null, label));
+    tr.appendChild(denomCell(r.installs));
+    V3_BUCKETS.forEach(function(k){ tr.appendChild(r[k] == null ? naCell() : metricCell(r[k], r.installs, mode, maxRate)); });
+    var td = metricCell(v3Total(r), r.installs, mode, maxTotal);
+    td.classList.add('total-col');
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+  function v3MaxTotal(rows){ return rows.reduce(function(m, r){ return Math.max(m, pct(v3Total(r), r.installs)); }, 0) || 1; }
+
+  function renderV3(){
+    var data = v3Data();
+    document.body.classList.toggle('v3-comp', !!data);
+    if(currentDataset === 'vontron') document.querySelector('.vendor-chip').lastChild.textContent = data ? 'Vontron · ' + v3Label() : DATASETS.vontron.chip;
+    if(!data) return;
+    var vendorView = pctOnly();
+    var m = data.meta;
+    document.getElementById('scopeBanner').textContent = v3Label() + ' — all manufacturers, all-time install base (data pulled ' + m.pulled_at + ')' +
+      (vendorView ? '. ' : ': ' + fmtInt(m.total_installs) + ' installs, ' + fmtInt(m.total_defect_events) + ' replacements. ') +
+      'Broader scope than the RO Membrane view, which covers Ronch- and Amber-assembled machines only.';
+
+    // Install Cohort tab
+    var stats = document.getElementById('v3Stats'); stats.innerHTML = '';
+    var rate = pct(m.total_defect_events, m.total_installs);
+    if(!vendorView){
+      stats.appendChild(statTile('Installs', fmtInt(m.total_installs), 'All manufacturers, all time'));
+      stats.appendChild(statTile('Replacements', fmtInt(m.total_defect_events), 'Any replacement, any sequence'));
+    }
+    stats.appendChild(statTile('Lifetime defect rate', fmt1(rate) + '%', 'Replacements per install'));
+    var rf = data.repeat.repeat_flag, rTotal = (rf.No || 0) + (rf.Yes || 0);
+    stats.appendChild(statTile('Repeat share', fmt1(pct(rf.Yes || 0, rTotal)) + '%', 'Replacements on a machine that already had one'));
+
+    var cohort = data.cohort.slice(-18);
+    var tbody = v3Head('v3CohortTable', ['Install month', { abs: 'Installs' }].concat(V3_BUCKET_LABELS, ['Overall']));
+    var maxRate = maxRateAcross(cohort, 'installs', V3_BUCKETS), maxTotal = v3MaxTotal(cohort);
+    cohort.forEach(function(r){ v3TenureRow(tbody, r.month, r, modeState.v3cohort || 'abs', maxRate, maxTotal); });
+
+    tbody = v3Head('v3MfgTable', ['Manufacturer', { abs: 'Installs' }, { abs: 'Replacements' }, 'Defect rate']);
+    data.manufacturer_split.slice().sort(function(a, b){ return b.installs - a.installs; }).forEach(function(r){
+      var tr = el('tr');
+      tr.appendChild(el('td', null, r.manufacturer));
+      tr.appendChild(denomCell(r.installs));
+      tr.appendChild(denomCell(r.defects));
+      tr.appendChild(el('td', 'tnum', fmt1(r.defect_rate_pct) + '%'));
+      tbody.appendChild(tr);
+    });
+
+    var rep = document.getElementById('v3Repeat'); rep.innerHTML = '';
+    rep.appendChild(statTile('First replacement', vendorView ? fmt1(pct(rf.No || 0, rTotal)) + '%' : fmtInt(rf.No || 0), vendorView ? 'of replacements' : fmt1(pct(rf.No || 0, rTotal)) + '% of replacements'));
+    rep.appendChild(statTile('Repeat replacement', vendorView ? fmt1(pct(rf.Yes || 0, rTotal)) + '%' : fmtInt(rf.Yes || 0), vendorView ? 'of replacements' : fmt1(pct(rf.Yes || 0, rTotal)) + '% of replacements'));
+    var seqs = Object.keys(data.repeat.by_sequence).map(Number);
+    if(seqs.length) rep.appendChild(statTile('Most replacements on one machine', String(Math.max.apply(null, seqs)), 'Highest replacement sequence seen'));
+
+    var gaps = document.getElementById('v3Gaps'); gaps.innerHTML = '';
+    (m.known_gaps || []).forEach(function(g){ var li = el('li', null, g); li.style.marginBottom = '6px'; gaps.appendChild(li); });
+
+    // Geography tab: cities for admins, states for everyone else
+    var byCity = currentRole === 'admin' && !previewVendor;
+    var rows = data.geo;
+    if(!byCity){
+      var agg = {};
+      data.geo.forEach(function(r){
+        var st = STATE_BY_CITY[(r.city || '').trim().toLowerCase().replace(/\s+/g, ' ')] || 'Other';
+        var a = agg[st] || (agg[st] = { city: st, installs: 0 });
+        a.installs += r.installs;
+        V3_BUCKETS.forEach(function(k){ if(r[k] != null) a[k] = (a[k] || 0) + r[k]; else if(!(k in a)) a[k] = null; });
+      });
+      rows = Object.keys(agg).map(function(k){ return agg[k]; });
+    }
+    rows = rows.slice().sort(function(a, b){ return b.installs - a.installs; });
+    document.getElementById('v3GeoTitle').textContent = 'Defect rate by ' + (byCity ? 'city' : 'state');
+    document.getElementById('v3GeoCount').textContent = fmtInt(rows.length) + (byCity ? ' cities' : ' states');
+    tbody = v3Head('v3GeoTable', [byCity ? 'City' : 'State', { abs: 'Installs' }].concat(V3_BUCKET_LABELS, ['Overall']));
+    maxRate = maxRateAcross(rows, 'installs', V3_BUCKETS); maxTotal = v3MaxTotal(rows);
+    rows.forEach(function(r){ v3TenureRow(tbody, r.city, r, modeState.v3geo || 'abs', maxRate, maxTotal); });
+
+    // Water Quality tab: the funnels granted for this component (smart machines only)
+    var box = document.getElementById('v3Funnels'); box.innerHTML = '';
+    var granted = V3_FUNNELS.filter(function(f){ return (compAccess.funnels[v3Comp] || []).indexOf(f) >= 0; });
+    if(!granted.length) box.appendChild(Object.assign(el('div', 'card'), { innerHTML: '<div class="table-note">No water-quality views have been assigned for this component.</div>' }));
+    granted.forEach(function(fc){
+      var info = V3_FUNNEL_INFO[fc], frows = (data.funnels[info.key] || []).slice(-12);
+      var card = el('div', 'card'), head = el('div', 'card-head');
+      head.appendChild(el('h2', null, info.title));
+      head.appendChild(el('span', 'hint', 'Smart machines only' + (vendorView ? '' : ' · ' + fmtInt(data.funnels.total_smart_installs) + ' smart installs')));
+      card.appendChild(head);
+      var wrap = el('div', 'table-wrap'), table = el('table');
+      table.appendChild(el('thead')); table.appendChild(el('tbody'));
+      table.id = 'v3Funnel_' + fc; wrap.appendChild(table); card.appendChild(wrap); box.appendChild(card);
+      var tb = v3Head(table.id, ['Install month', { abs: 'Smart installs' }].concat(info.buckets));
+      var fmax = 0;
+      frows.forEach(function(r){ info.buckets.forEach(function(b){ fmax = Math.max(fmax, pct(r[b] || 0, r.smart_installs)); }); });
+      frows.forEach(function(r){
+        var tr = el('tr');
+        tr.appendChild(el('td', null, r.month));
+        tr.appendChild(denomCell(r.smart_installs));
+        info.buckets.forEach(function(b){ tr.appendChild(metricCell(r[b] || 0, r.smart_installs, 'abs', fmax || 1)); });
+        tb.appendChild(tr);
+      });
+    });
+
+    // Row-Level Detail tab
+    var mfgSel = document.getElementById('v3Mfg'), mfgs = {};
+    data.case_detail.forEach(function(r){ if(r.manufacturer) mfgs[r.manufacturer] = true; });
+    mfgSel.innerHTML = '<option value="">Manufacturer: all</option>' + Object.keys(mfgs).sort().map(function(x){ return '<option>' + x + '</option>'; }).join('');
+    mfgSel.value = v3Case.mfg;
+    renderV3Cases();
+  }
+
+  var V3_CASE_MAX = 500;
+  function renderV3Cases(){
+    var data = v3Data();
+    if(!data) return;
+    var byCity = currentRole === 'admin' && !previewVendor;
+    var rows = data.case_detail.filter(function(r){
+      return (!v3Case.barcode || (r.machine_barcode || '').toUpperCase().indexOf(v3Case.barcode) >= 0) &&
+        (!v3Case.mfg || r.manufacturer === v3Case.mfg) && (!v3Case.repeat || r.repeat_flag === v3Case.repeat);
+    });
+    document.getElementById('v3CaseCount').textContent = fmtInt(rows.length) + ' of ' + fmtInt(data.case_detail.length) + ' rows' +
+      (rows.length > V3_CASE_MAX ? ' (showing first ' + V3_CASE_MAX + ')' : '');
+    var cols = ['machine_barcode', 'manufacturer', 'machine_sku', 'city', 'installation_month', 'revisit_month', 'tenure_bucket', 'repeat_flag', 'sold_to_channel', 'issue', 'sub_issue', 'avg_input_tds_bucket', 'avg_output_tds_bucket'];
+    var tbody = v3Head('v3CaseTable', ['Machine barcode', 'Manufacturer', 'Model', byCity ? 'City' : 'State', 'Install month', 'Revisit month', 'Tenure', 'Repeat', 'Sold to', 'Issue', 'Sub-issue', 'Input TDS', 'Output TDS']);
+    rows.slice(0, V3_CASE_MAX).forEach(function(r){
+      var tr = el('tr');
+      cols.forEach(function(c){
+        var v = r[c];
+        if(c === 'city' && !byCity) v = STATE_BY_CITY[(v || '').trim().toLowerCase().replace(/\s+/g, ' ')] || 'Other';
+        tr.appendChild(el('td', c === 'machine_barcode' ? 'mono' : null, v == null || v === '' ? '—' : String(v)));
+      });
+      tbody.appendChild(tr);
+    });
+  }
+  document.getElementById('v3Barcode').addEventListener('input', function(){ v3Case.barcode = this.value.trim().toUpperCase(); renderV3Cases(); });
+  document.getElementById('v3Mfg').addEventListener('change', function(){ v3Case.mfg = this.value; renderV3Cases(); });
+  document.getElementById('v3RepeatSel').addEventListener('change', function(){ v3Case.repeat = this.value; renderV3Cases(); });
 
   function renderDebit(){
     if(!isDebitView()) return;
@@ -2318,6 +2511,7 @@
     renderGeo();
     renderTds();
     renderRows();
+    renderV3();
   }
 
   document.getElementById('cohortRange').addEventListener('change', renderCohort);
