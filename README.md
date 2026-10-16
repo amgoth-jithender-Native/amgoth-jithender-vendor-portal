@@ -6,6 +6,97 @@ Lets a spare-part manufacturer log in and see field-failure data for their own
 component: install cohort trends, defect rate by geography, defect rate by
 water quality (TDS), and row-level spare records.
 
+## Component Defect Analysis v3 (`component-analysis.html`, added 2026-10-16)
+
+A third standalone page, implementing the "v3 Build Plan" — a general-purpose,
+all-manufacturer, all-component defect-analysis system (vs. the original
+single-vendor/single-component pilot in `index.html`). Built the concrete
+Vontron/RO-Membrane pilot (Section 7 of the plan) now; the full "all vendors,
+all components" system waits on two inputs only the user can provide (spare
+SKU→component→vendor mapping, vendor list) — everything that doesn't depend
+on those is built and real.
+
+**Master query (Phase 1), run directly on Jarvis, not a round-trip hand-off:**
+all-time Native RO install base (**489,909 installs**, no date floor — scan-
+verified barcode tracking goes back further than previously known, to Sep
+2024) and a universal defect table (**369,059 line items**, any invoiced
+spare, not just RO Membrane). Manufacturer derived from the validated barcode
+substrings (`XRP`/`RPP`/`RPX` = Ronch, `AMX`/`AMB` = Amber — not the plan's
+oversimplified "RP"/"AM" prefix). The old Ronch/Amber/UC `sold_to` channel
+logic ([[project_vendor_defects_dashboard]]) is kept, generalized to any
+component (first replacement = the machine's own manufacturer, 2nd+ = UC
+repair-stock), per explicit instruction not to drop it.
+
+**Cross-validated against the already-proven Ronch/Amber pilot numbers**,
+not just spot-checked: filtering this broader table back down to the exact
+old pilot's scope gives 1,150 Ronch / 45 Amber RO-Membrane events vs. the
+validated 960 / 39 — ~20% higher, fully traced (not left as an unexplained
+gap) to the old pilot's SKU-code filter using a suffix match (`ILIKE
+'%/12501'`) that silently misses `UC/NATIVE/12501/M0` (code isn't at the
+string's end) and never included `M3`/`M3 Pro` codes at all. v3's broader,
+SKU-code-agnostic population is a genuine completeness fix, not a
+discrepancy.
+
+**Phase 2 (telemetry)** reuses the validated TDS-at-install logic plus two
+metrics not used before: `AVG_TDS` (output TDS) and `WATER_CONSUMED`, both
+already present in the same `WATER_PURIFIERXMETRIC_DATE__DAILY__METRICS` /
+`IOT_DEVICEXMETRIC_DATE__HOURLY__METRICS` tables as input TDS — no new
+tables needed. M2's IoT-platform join (`SMARTAPPLIANCE_DP__VIEW`, matched by
+customer, "unique" match quality only) reused verbatim from
+`~/uc-audit/portal_tds/q2_device_tds_iot_m2.sql` rather than re-derived.
+36.1% of RO Membrane defect events (4,994 of 13,816) have usable windowed
+telemetry (install date → revisit date).
+
+**Known gaps, disclosed in the page itself, not just here:**
+- **"No barcode match" machines (174,253 installs, 35.6% of the fleet) show
+  a 5.9% lifetime RO-Membrane defect rate vs. Ronch's 1.1% and Amber's
+  0.2%** — confirmed this is an age/exposure-time effect, not a quality
+  signal: these machines have a median install date over a year earlier
+  than barcode-matched ones. Don't compare these rates head-to-head.
+- **`water_consumed` figures are provisional** — computed assuming the
+  source fields are in millilitres, not litres, based on real single-day
+  values (3,000–21,000) that only make sense as a household daily total in
+  mL. This unit assumption has not been confirmed with whoever owns the
+  telemetry pipeline.
+- `F_PRESSURE` is specified in the plan but not meaningfully buildable —
+  input pressure capture is ~0.04% system-wide (established in prior work),
+  unchanged by this rebuild.
+- `smart_device_flag` is a SKU-string heuristic (M1Pro/M2/M2Pro/M3/M3Pro =
+  smart), not confirmed live telemetry presence.
+- `component`/`spare_vendor` mapping for anything beyond RO Membrane is
+  pending the user's SKU→component→vendor list (Section 9 of the plan) —
+  `spare_changed` on the raw defect table carries the item name, ready to
+  join once that list exists.
+
+**Permission model (Phase 4/6), fully separate tables** —
+`supabase/migrations/006_component_access.sql`: `components`, `v3_vendors`,
+`vendor_component_access`, `vendor_funnel_access`, `component_audit_log`.
+Deliberately **not** `vendor_access` (which gates the original Vontron tabs
+and the Ronch/Amber debit-note dashboards in `index.html`) and **not**
+anything Part 1 (debit notes) touches — a change here cannot affect Siddharth
+or Keshav's debit notes, by construction (different tables, different page).
+Seeded with Vontron → RO Membrane → `F_TDS_IN`/`F_TDS_OUT`/`F_TDS_IO`/
+`F_WATER` (no `F_PRESSURE`, per the gap above). Admin users get a "Manage
+access" button in the page itself to grant/revoke per vendor, writing to
+`component_audit_log` on every change — real enforcement happens through
+these tables via Supabase RLS policies (same `profiles.role`/`vendor_name`
+pattern as every other page), not UI-only hiding.
+
+**Architecture note, stated plainly:** like every other page in this portal,
+this one ships as a static GitHub Pages file with the Supabase anon key
+embedded (safe — protected by RLS, not secrecy). The actual defect/cohort/
+geo/case-detail *data* is embedded as a static JSON blob in the page itself,
+not served from Supabase tables with live per-row RLS — so while *access to
+the page's login* and the *permission grants* are real and enforced in
+Supabase, a sufficiently determined user could still extract the raw
+embedded JSON from this file's source. For a single-vendor pilot (Vontron
+only) this is an acceptable, disclosed limitation, same as the earlier
+debit-note pages. If/when a second vendor's *different* component data needs
+to ship from the *same* file without being visible to the first vendor,
+this needs to move to live Supabase-table queries with row-level security,
+not static embedding — flagged now so it isn't a surprise at Phase 8 (scale
+to all vendors).
+
 ## Ronch warranty debit note (`debit-note-ronch.html`, added 2026-10-15)
 
 A second, separate page — not a tab in the main portal — for **Ronch** (the
