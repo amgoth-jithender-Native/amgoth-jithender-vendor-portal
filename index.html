@@ -1179,6 +1179,34 @@
     var onComp = !!document.querySelector('.tab-btn.active[data-tab="components"]');
     ['defectType', 'component'].forEach(function(id){ document.getElementById(id).closest('.control').hidden = onComp; });
     if(onComp) document.getElementById('periodControl').hidden = true;
+    else if(!isDebitView()) document.getElementById('component').value = 'ro_membrane'; // the Vontron tabs are RO Membrane only
+  }
+
+  // Components in component-analysis.html (ids from 006/007_*.sql), RO Membrane first
+  var V3_COMPONENTS = [['ro_membrane','RO Membrane'], ['sediment_filter','Sediment / Pre Filter'],
+    ['tap_assembly','Tap / Faucet Assembly'], ['carbon_filter','Carbon / Health Booster Filter'],
+    ['solenoid_valve','Solenoid Valve'], ['pcb','PCB'], ['pek_prv','Pressure Enhancing/Reducing Kit (PEK/PRV)'],
+    ['smps','SMPS / Adapter'], ['booster_pump','Booster / Dispensing Pump'], ['float_assembly','Float Switch / Assembly'],
+    ['pressure_switch','Pressure Switch (HPS/LPS)'], ['connectors_fittings','Connectors / Valves / Fittings'],
+    ['flow_restrictor','Flow Restrictor / Flow Sensor'], ['uv_led','UV / LED'], ['wire_harness','Wire Harness'],
+    ['tds_sensor','TDS Sensor / Controller'], ['battery','Battery'], ['bezel','Bezel Assembly'],
+    ['tank_accessories','Tank / Accessories'], ['uf_filter','UF Filter'], ['ups','UPS'], ['back_panel','Back Panel'],
+    ['membrane_housing','RO Membrane Housing']];
+
+  // Select a component in the embedded page once it has signed in and filled its picker
+  var frameWant = null, frameTimer = null;
+  function showComponentInFrame(id){
+    frameWant = id;
+    clearInterval(frameTimer);
+    var tries = 0;
+    frameTimer = setInterval(function(){
+      var doc = componentFrame.contentDocument;
+      var pick = doc && doc.getElementById('fComponent');
+      if(pick && pick.querySelector('option[value="' + frameWant + '"]')){
+        if(pick.value !== frameWant){ pick.value = frameWant; pick.dispatchEvent(new Event('change')); }
+        clearInterval(frameTimer);
+      } else if(++tries > 120) clearInterval(frameTimer);
+    }, 250);
   }
 
   // Loaded on first open (the page is ~8 MB) and dropped on login/logout so a new login never sees the last one's view.
@@ -1191,6 +1219,7 @@
   }
   function resetComponentFrame(){
     if(frameObserver){ frameObserver.disconnect(); frameObserver = null; }
+    clearInterval(frameTimer);
     componentFrame.removeAttribute('src');
     componentFrame.style.height = '';
   }
@@ -2036,7 +2065,11 @@
     document.getElementById('periodControl').hidden = !debit || window.MW_DEBIT[currentDataset].periods.length < 2;
     if(!debit){
       typeSel.innerHTML = vontronControls.type;
-      compSel.innerHTML = vontronControls.comp;
+      // With Component Analysis access, every component is listed; anything but RO Membrane opens that tab
+      compSel.innerHTML = compAccess ? V3_COMPONENTS.map(function(c){
+        return '<option value="' + c[0] + '">' + c[1] + '</option>';
+      }).join('') : vontronControls.comp;
+      compSel.value = 'ro_membrane';
       return;
     }
     rWire();
@@ -2063,7 +2096,12 @@
     renderDebit();
   });
   compSel.addEventListener('change', function(){
-    if(!isDebitView()) return;
+    if(!isDebitView()){
+      if(compSel.value === 'ro_membrane') return;
+      showComponentInFrame(compSel.value);
+      document.querySelector('.tab-btn[data-tab="components"]').click();
+      return;
+    }
     rState.comp = compSel.value;
     renderDebit();
   });
