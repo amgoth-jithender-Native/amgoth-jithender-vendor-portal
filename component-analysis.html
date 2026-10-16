@@ -1,6 +1,7 @@
 <title>Component Defect Analysis — Membrane Watch</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>if(location.protocol==="file:")document.write('<script src="config.local.js"><\/script>')</script>
+<script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('embed')</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
   :root{
@@ -274,6 +275,8 @@
     thead th, tbody td, tfoot td{ padding:8px 10px; }
     .bar-row{ grid-template-columns:66px 1fr 50px; }
   }
+  /* Embedded in the main portal's Component Analysis tab (?embed=1): the portal supplies the header and footer */
+  html.embed header.topbar, html.embed footer.page-footer{ display:none; }
 </style>
 
 
