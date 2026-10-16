@@ -11,10 +11,58 @@ water quality (TDS), and row-level spare records.
 A third standalone page, implementing the "v3 Build Plan" — a general-purpose,
 all-manufacturer, all-component defect-analysis system (vs. the original
 single-vendor/single-component pilot in `index.html`). Built the concrete
-Vontron/RO-Membrane pilot (Section 7 of the plan) now; the full "all vendors,
-all components" system waits on two inputs only the user can provide (spare
-SKU→component→vendor mapping, vendor list) — everything that doesn't depend
-on those is built and real.
+Vontron/RO-Membrane pilot (Section 7 of the plan) first; the full "all
+vendors, all components" system still waits on the real SKU→component→vendor
+mapping and vendor list, but **extended 2026-10-16 to cover all 23
+components**, with Vontron temporarily granted access to every one of them —
+**user-confirmed interim decision**, not a final access policy, pending that
+mapping. Peer session (`amgoth-jithender-vendor-portal-2b`) relayed this
+request on the user's behalf; confirmed directly with the user before acting
+on it, since it's a real (if temporary) data-exposure change that cuts
+against this whole system's own confidentiality goal.
+
+**Component grouping is provisional, keyword-based, not the real mapping**
+(`/tmp` script `component_map.py`'s logic, one ordered list of
+keyword→component rules — kept as the single editable place for when the
+real list arrives). Classified all 369,059 defect line items into 26 buckets
+by matching the raw invoiced item name; 23 are real physical components
+(shown below), the other 3 (`non_spare_admin` — 244,567 "Free Native
+Revisit/Repair", "Minor repair" etc., administrative not physical;
+`truwater_other_line` — a different product line entirely, not Native RO;
+`unmapped_other` — 81 blank item names) are excluded from the vendor-facing
+component selector. Classification coverage: 99.98% of real item names
+matched a component (two bugs caught and fixed before shipping — a trailing-
+space typo silently excluded 18,214 `NATIVE M1 Tap` events from Tap
+Assembly, and `TDSSENSOR` without a space wasn't matching the TDS Sensor
+rule).
+
+**The 23 components** (by event count): Non-spare/Admin and TruWater
+excluded as above; **Sediment/Pre Filter** (24,565), **Tap/Faucet Assembly**
+(18,814), **RO Membrane** (14,253), **Carbon/Health Booster Filter**
+(14,224), **Solenoid Valve** (13,069), **PCB** (5,911), **PEK/PRV** (5,152),
+**SMPS/Adapter** (5,131), **Booster/Dispensing Pump** (4,935), **Float
+Switch/Assembly** (4,655), **Pressure Switch (HPS/LPS)** (4,381),
+**Connectors/Valves/Fittings** (3,065), **Flow Restrictor/Sensor** (2,189),
+**UV/LED** (812), **Wire Harness** (698), **TDS Sensor/Controller** (477),
+**Battery** (394), **Bezel Assembly** (295), **Tank/Accessories** (256),
+**UF Filter** (130), **UPS** (57), **Back Panel** (45), **RO Membrane
+Housing** (14).
+
+**Telemetry extended to all smart-capable defect events** (84,218 rows
+matched, up from the RO-Membrane-only 5,265), same dual-path join as before
+(direct for M1Pro/M2_UC/M3/M3Pro, customer-matched IoT platform for plain
+M2) — no new join logic needed, just a wider population.
+
+**Case detail is capped at 1,000 most-recent rows per component** to keep
+total file size manageable (8.3 MB for all 23 components combined, vs. 6.8
+MB for RO Membrane alone before the cap) — the headline event-count stat
+per component is always the true, uncapped figure; only the row-level table
+is capped, and this is disclosed on the page itself.
+
+**New migration `007_all_components.sql`** (does not edit `006`, which the
+user already ran) — seeds the 22 non-RO-Membrane components and grants
+Vontron access to all 23 components × the same 4 funnels (no `F_PRESSURE`).
+Kept every line short after the `006` paste-truncation incident.
 
 **Master query (Phase 1), run directly on Jarvis, not a round-trip hand-off:**
 all-time Native RO install base (**489,909 installs**, no date floor — scan-
