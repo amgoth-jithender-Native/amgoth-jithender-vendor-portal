@@ -755,10 +755,16 @@
     }
     document.getElementById('noComponentsNote').hidden = true;
     document.getElementById('componentContent').hidden = false;
-    allowedComponents.forEach(function(c){
+    var sorted = allowedComponents.slice().sort(function(a, b){
+      return (COMPONENT_LABELS[a] || a).localeCompare(COMPONENT_LABELS[b] || b);
+    });
+    sorted.forEach(function(c){
       var o = document.createElement('option'); o.value = c; o.textContent = COMPONENT_LABELS[c] || c; fComponent.appendChild(o);
     });
-    currentComponent = allowedComponents[0];
+    // Default to RO Membrane (the originally validated pilot component) when available,
+    // rather than whichever component happens to sort first.
+    currentComponent = allowedComponents.indexOf('ro_membrane') >= 0 ? 'ro_membrane' : sorted[0];
+    fComponent.value = currentComponent;
     return true;
   }
   fComponent.addEventListener('change', function(){ currentComponent = fComponent.value; renderComponent(); });
