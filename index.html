@@ -749,7 +749,7 @@
   function datasetFor(vendor){ return VENDOR_DATASET[vendor] || 'vontron'; }
   var VENDOR_LABELS = { vontron:'Vontron' }; // vendor_id -> display name, filled from v3_vendors at sign-in
   var V3_VENDORS = [];                       // v3_vendors rows: component-view vendors
-  var GRANT_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_TDS_IO', 'F_WATER']; // granted with each component (no F_PRESSURE)
+  var GRANT_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_TDS_IO', 'F_WATER', 'F_PRESSURE']; // granted with each component
   var DEBIT_TABS = ['r_summary','r_components','r_cohort','r_sku','r_rows'];
   var DATASETS = {
     vontron: { kind:'funnel', chip:'Vontron · RO Membrane', status:'Data on portal · RO Membrane', tabs:['cohort','geo','tds','rows'] },
@@ -850,7 +850,7 @@
 
   // Components beyond RO Membrane in the Vontron view: staff get all of them; a vendor gets what
   // vendor_component_access / vendor_funnel_access grant (006/007_*.sql). Missing tables mean none.
-  var V3_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_WATER'];
+  var V3_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_TDS_IO', 'F_WATER', 'F_PRESSURE'];
   var compAccess = { comps: [], funnels: {} };
   var staffAccess = null;    // staff's own access, restored when a vendor preview ends
   // True when this view shows the validated Vontron RO Membrane pilot data, so component-data.js isn't needed yet
@@ -2275,7 +2275,12 @@
   var V3_FUNNEL_INFO = {
     F_TDS_IN:  { key: 'f_tds_in',  title: 'Defects by average input TDS (ppm)', buckets: ['<200', '200-500', '500-1000', '1000-1500', '>1500', 'Non-smart / NA', 'No data'] },
     F_TDS_OUT: { key: 'f_tds_out', title: 'Defects by average output TDS (ppm)', buckets: ['<50', '50-100', '100-150', '>150', 'Non-smart / NA', 'No data'] },
-    F_WATER:   { key: 'f_water',   title: 'Defects by daily water consumed (provisional units)', buckets: ['<500', '500-1000', '1000-2000', '2000-5000', '>5000', 'Non-smart / NA', 'No data'] }
+    F_WATER:   { key: 'f_water',   title: 'Defects by daily water consumed (provisional units)', buckets: ['<500', '500-1000', '1000-2000', '2000-5000', '>5000', 'Non-smart / NA', 'No data'] },
+    F_TDS_IO:  { key: 'f_tds_io',  title: 'Defects by input × output TDS (ppm)' },
+    // All machines, not just smart ones: photo-read PSI from the installation pressure audit (Jan-26 onward)
+    F_PRESSURE:{ key: 'f_pressure', title: 'Defects by input pressure at installation (PSI)', buckets: ['≤5 PSI', '5–25 PSI', '>25 PSI'],
+                 denom: 'pressure_installs', denomLabel: 'Installs with reading', total: 'total_pressure_installs',
+                 hint: 'Installs with a pressure reading, Jan-26 onward' }
   };
   var componentsLoad = null;
   function loadComponents(){
@@ -2391,22 +2396,39 @@
     var granted = V3_FUNNELS.filter(function(f){ return (compAccess.funnels[v3Comp] || []).indexOf(f) >= 0; });
     if(!granted.length) box.appendChild(Object.assign(el('div', 'card'), { innerHTML: '<div class="table-note">No water-quality views have been assigned for this component.</div>' }));
     granted.forEach(function(fc){
-      var info = V3_FUNNEL_INFO[fc], frows = (data.funnels[info.key] || []).slice(-12);
+      var info = V3_FUNNEL_INFO[fc], fdata = data.funnels[info.key];
+      if(!fdata) return;
       var card = el('div', 'card'), head = el('div', 'card-head');
       head.appendChild(el('h2', null, info.title));
-      head.appendChild(el('span', 'hint', 'Smart machines only' + (vendorView ? '' : ' · ' + fmtInt(data.funnels.total_smart_installs) + ' smart installs')));
+      var denomKey = info.denom || 'smart_installs';
+      var hint = fc === 'F_TDS_IO' ? 'Smart machines with both readings' + (vendorView ? '' : ' · ' + fmtInt(fdata.total) + ' defects')
+        : (info.hint || 'Smart machines only') + (vendorView ? '' : ' · ' + fmtInt(data.funnels[info.total || 'total_smart_installs']) + (info.total ? ' installs' : ' smart installs'));
+      head.appendChild(el('span', 'hint', hint));
       card.appendChild(head);
       var wrap = el('div', 'table-wrap'), table = el('table');
       table.appendChild(el('thead')); table.appendChild(el('tbody'));
       table.id = 'v3Funnel_' + fc; wrap.appendChild(table); card.appendChild(wrap); box.appendChild(card);
-      var tb = v3Head(table.id, ['Install month', { abs: 'Smart installs' }].concat(info.buckets));
-      var fmax = 0;
-      frows.forEach(function(r){ info.buckets.forEach(function(b){ fmax = Math.max(fmax, pct(r[b] || 0, r.smart_installs)); }); });
+      var fmax = 0, tb;
+      if(fc === 'F_TDS_IO'){
+        // Grid of input bucket x output bucket; % = share of this component's defects with both readings
+        tb = v3Head(table.id, ['Input ↓ · Output →'].concat(fdata.out_buckets));
+        fdata.cells.forEach(function(row){ row.forEach(function(n){ fmax = Math.max(fmax, pct(n, fdata.total)); }); });
+        fdata.cells.forEach(function(row, i){
+          var tr = el('tr');
+          tr.appendChild(el('td', null, fdata.in_buckets[i]));
+          row.forEach(function(n){ tr.appendChild(metricCell(n, fdata.total, 'abs', fmax || 1)); });
+          tb.appendChild(tr);
+        });
+        return;
+      }
+      var frows = fdata.slice(-12);
+      tb = v3Head(table.id, ['Install month', { abs: info.denomLabel || 'Smart installs' }].concat(info.buckets));
+      frows.forEach(function(r){ info.buckets.forEach(function(b){ fmax = Math.max(fmax, pct(r[b] || 0, r[denomKey])); }); });
       frows.forEach(function(r){
         var tr = el('tr');
         tr.appendChild(el('td', null, r.month));
-        tr.appendChild(denomCell(r.smart_installs));
-        info.buckets.forEach(function(b){ tr.appendChild(metricCell(r[b] || 0, r.smart_installs, 'abs', fmax || 1)); });
+        tr.appendChild(denomCell(r[denomKey]));
+        info.buckets.forEach(function(b){ tr.appendChild(metricCell(r[b] || 0, r[denomKey], 'abs', fmax || 1)); });
         tb.appendChild(tr);
       });
     });
