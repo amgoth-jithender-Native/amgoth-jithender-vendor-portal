@@ -416,7 +416,7 @@
   <dialog id="accessDialog" class="pw-dialog">
     <div class="login-card access-card">
       <h1>Vendor access</h1>
-      <p class="sub">Choose which tables each vendor sees after signing in. Vontron's tables always show rates only, by state. Use Preview to see the portal exactly as that vendor will.</p>
+      <p class="sub">Choose which tables and components each vendor sees after signing in. Vendors always see rates only, by state. Link a new vendor login below, tick its components and Save. Use Preview to see the portal exactly as that vendor will.</p>
       <div id="accessError" class="login-error" hidden><span>⚠</span><span id="accessErrorText"></span></div>
       <div id="accessList" class="access-list"></div>
       <div class="back-row"><button type="button" class="link-btn" id="accessClose">Close</button></div>
@@ -443,9 +443,6 @@
       <label for="vendorSel">Vendor</label>
       <select id="vendorSel" class="pill-select">
         <option value="vontron">Vontron</option>
-        <option value="lexcru">Lexcru</option>
-        <option value="iotfy">IOTFY</option>
-        <option value="gadson">Gadson</option>
         <option value="ronch">Ronch · Warranty debit note</option>
         <option value="amber">Amber · Warranty debit note</option>
       </select>
@@ -747,10 +744,12 @@
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE"; // Project Settings -> API Keys -> publishable (anon) key
   // Vendors whose data this page carries: vendor_name (lower-cased) -> dataset.
   // 'siddharth' and 'keshav' are the vendor_names of the Ronch and Amber logins (same as their debit-note pages).
-  // Lexcru, IOTFY and Gadson share Vontron's component view, limited to their own components (008_vendor_components.sql).
-  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch', amber:'amber', keshav:'amber',
-    lexcru:'vontron', iotfy:'vontron', gadson:'vontron' };
-  var VENDOR_LABELS = { vontron:'Vontron', lexcru:'Lexcru', iotfy:'IOTFY', gadson:'Gadson' };
+  // Every other vendor gets the component view, limited to the components an admin grants it in Vendor access.
+  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch', amber:'amber', keshav:'amber' };
+  function datasetFor(vendor){ return VENDOR_DATASET[vendor] || 'vontron'; }
+  var VENDOR_LABELS = { vontron:'Vontron' }; // vendor_id -> display name, filled from v3_vendors at sign-in
+  var V3_VENDORS = [];                       // v3_vendors rows: component-view vendors
+  var GRANT_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_TDS_IO', 'F_WATER']; // granted with each component (no F_PRESSURE)
   var DEBIT_TABS = ['r_summary','r_components','r_cohort','r_sku','r_rows'];
   var DATASETS = {
     vontron: { kind:'funnel', chip:'Vontron · RO Membrane', status:'Data on portal · RO Membrane', tabs:['cohort','geo','tds','rows'] },
@@ -833,7 +832,6 @@
     if(profile.role === 'admin' || profile.role === 'team_management') return null;
     var vendor = vendorKey(profile.vendor_name);
     if(profile.role !== 'vendor' || !vendor) return 'Your account is not linked to a vendor yet. Ask an admin to assign it.';
-    if(!VENDOR_DATASET[vendor]) return 'Your dashboard is being set up: data for your components is not on the portal yet. We will let you know when it is ready.';
     return null;
   }
   function vendorKey(name){ return (name || '').trim().toLowerCase(); }
@@ -843,7 +841,7 @@
   function loadVendorTabs(vendor){
     return sb.from('vendor_access').select('tabs').eq('vendor_name', vendor).maybeSingle().then(function(res){
       if(res.error){
-        if(res.error.code === 'PGRST205' || res.error.code === '42P01') return DATASETS[VENDOR_DATASET[vendor]].tabs;
+        if(res.error.code === 'PGRST205' || res.error.code === '42P01') return DATASETS[datasetFor(vendor)].tabs;
         throw res.error;
       }
       return (res.data && res.data.tabs) || [];
@@ -855,6 +853,28 @@
   var V3_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_WATER'];
   var compAccess = { comps: [], funnels: {} };
   var staffAccess = null;    // staff's own access, restored when a vendor preview ends
+  // True when this view shows the validated Vontron RO Membrane pilot data, so component-data.js isn't needed yet
+  function usesPilot(vendor, access){ return (!vendor || vendor === 'vontron') && access.comps.indexOf('ro_membrane') >= 0; }
+  function loadVendorLabels(){
+    return sb.from('v3_vendors').select('vendor_id, vendor_name').order('vendor_name').then(function(res){
+      if(res.error) return;
+      V3_VENDORS = res.data;
+      V3_VENDORS.forEach(function(v){ VENDOR_LABELS[v.vendor_id] = v.vendor_name; });
+    });
+  }
+  // Staff Vendor dropdown: Vontron, then every other component vendor, then the debit-note vendors
+  function fillVendorSel(){
+    var sel = document.getElementById('vendorSel'), keep = sel.value;
+    sel.querySelectorAll('option[data-comp]').forEach(function(o){ o.remove(); });
+    var after = sel.querySelector('option[value="vontron"]');
+    V3_VENDORS.forEach(function(v){
+      if(v.vendor_id === 'vontron' || VENDOR_DATASET[v.vendor_id]) return;
+      var o = el('option', null, v.vendor_name); o.value = v.vendor_id; o.setAttribute('data-comp', '');
+      after.after(o); after = o;
+    });
+    sel.value = keep;
+    if(sel.value !== keep) sel.value = 'vontron';
+  }
   function loadComponentAccess(role, vendor){
     if(role !== 'vendor'){
       var all = { comps: V3_COMPONENTS.map(function(c){ return c[0]; }), funnels: {} };
@@ -882,7 +902,7 @@
         var problem = accessProblem(profile);
         if(problem || profile.role !== 'vendor') return problem;
         return loadVendorTabs(vendorKey(profile.vendor_name)).then(function(tabs){
-          var dataset = VENDOR_DATASET[vendorKey(profile.vendor_name)];
+          var dataset = datasetFor(vendorKey(profile.vendor_name));
           currentDataset = dataset;
           viewTabs = DATASETS[dataset].tabs.filter(function(t){ return tabs.indexOf(t) >= 0; });
           return viewTabs.length ? null : 'No dashboard tables have been assigned to your account yet. Ask an admin.';
@@ -891,10 +911,12 @@
       .then(function(problem){
         if(problem) return problem;
         myVendor = profile.role === 'vendor' ? vendorKey(profile.vendor_name) : null;
-        return loadComponentAccess(profile.role, myVendor).then(function(access){
+        return Promise.all([loadComponentAccess(profile.role, myVendor), loadVendorLabels()]).then(function(r){
+          var access = r[0];
           compAccess = staffAccess = access;
-          if(!myVendor || myVendor === 'vontron') return null; // currentRole isn't set yet, so not pilotAllowed()
+          if(!myVendor || datasetFor(myVendor) !== 'vontron') return null;
           if(!access.comps.length) return 'No components have been assigned to your account yet. Ask an admin.';
+          if(usesPilot(myVendor, access)) return null;
           return loadComponents().then(function(){ return null; });
         });
       })
@@ -904,6 +926,7 @@
         }
         if(profile.role !== 'vendor'){
           viewTabs = ALL_TABS;
+          fillVendorSel();
           document.getElementById('vendorSel').value = 'vontron';
           currentDataset = 'vontron';
         }
@@ -1070,28 +1093,70 @@
     accessList.appendChild(el('div', 'access-msg', 'Loading vendors…'));
     return Promise.all([
       sb.from('profiles').select('id, email, vendor_name').eq('role', 'vendor').order('email'),
-      sb.from('vendor_access').select('vendor_name, tabs')
+      sb.from('vendor_access').select('vendor_name, tabs'),
+      sb.from('v3_vendors').select('vendor_id, vendor_name'),
+      sb.from('vendor_component_access').select('vendor_id, component_id').eq('active', true)
     ]).then(function(r){
       if(r[0].error) throw r[0].error;
       if(r[1].error) throw new Error(r[1].error.code === 'PGRST205' || r[1].error.code === '42P01'
         ? 'The vendor_access table does not exist yet. Run supabase/migrations/003_vendor_access.sql in the Supabase SQL Editor.'
         : r[1].error.message);
+      if(r[2].error || r[3].error) throw new Error('Could not read component access. Run supabase/migrations/006_component_access.sql in the Supabase SQL Editor.');
       var saved = {};
       r[1].data.forEach(function(a){ saved[a.vendor_name] = a.tabs || []; });
       var vendors = {}, unlinked = [];
+      function vendor(key, name){ return vendors[key] = vendors[key] || { key: key, name: name, emails: [], comps: [], inV3: false }; }
       r[0].data.forEach(function(p){
         var key = vendorKey(p.vendor_name);
         if(!key){ unlinked.push(p); return; }
-        vendors[key] = vendors[key] || { key: key, name: p.vendor_name.trim(), emails: [] };
-        vendors[key].emails.push(p.email);
+        vendor(key, p.vendor_name.trim()).emails.push(p.email);
       });
-      Object.keys(saved).forEach(function(key){
-        vendors[key] = vendors[key] || { key: key, name: key, emails: [] };
-      });
-      renderAccess(Object.keys(vendors).sort().map(function(k){ vendors[k].tabs = saved[k] || []; return vendors[k]; }), unlinked);
+      r[2].data.forEach(function(v){ var x = vendor(v.vendor_id, v.vendor_name); x.name = v.vendor_name; x.inV3 = true; });
+      Object.keys(saved).forEach(function(key){ vendor(key, key); });
+      r[3].data.forEach(function(a){ if(vendors[a.vendor_id]) vendors[a.vendor_id].comps.push(a.component_id); });
+      renderAccess(Object.keys(vendors).sort().map(function(k){
+        vendors[k].tabs = saved[k];
+        return vendors[k];
+      }), unlinked);
     }).catch(function(err){
       accessList.innerHTML = '';
       showAccessError((err && err.message) || 'Could not load vendors.');
+    });
+  }
+
+  function logComponentChanges(vendorId, before, after){
+    return sb.auth.getSession().then(function(r){
+      var uid = r.data.session && r.data.session.user.id;
+      var rows = V3_COMPONENTS.map(function(c){ return c[0]; }).filter(function(c){
+        return (before.indexOf(c) >= 0) !== (after.indexOf(c) >= 0);
+      }).map(function(c){
+        return { user_id: uid, action: after.indexOf(c) >= 0 ? 'grant_component' : 'revoke_component', vendor_id: vendorId, component_id: c };
+      });
+      return rows.length ? sb.from('component_audit_log').insert(rows) : null;
+    });
+  }
+
+  // Grants exactly the ticked components (and their funnels) and revokes the rest
+  function saveComponents(v, comps){
+    var ensureVendor = v.inV3 ? Promise.resolve({}) : sb.from('v3_vendors').insert({ vendor_id: v.key, vendor_name: v.name });
+    return ensureVendor.then(function(res){
+      if(res.error) throw new Error(res.error.code === '42501'
+        ? 'Admins can’t add vendors yet. Run supabase/migrations/009_admin_vendors.sql in the Supabase SQL Editor.' : res.error.message);
+      v.inV3 = true;
+      var compRows = V3_COMPONENTS.map(function(c){ return { vendor_id: v.key, component_id: c[0], active: comps.indexOf(c[0]) >= 0 }; });
+      var funnelRows = [];
+      compRows.forEach(function(row){
+        GRANT_FUNNELS.forEach(function(f){ funnelRows.push({ vendor_id: v.key, component_id: row.component_id, funnel_code: f, active: row.active }); });
+      });
+      return sb.from('vendor_component_access').upsert(compRows).then(function(res){
+        if(res.error) throw res.error;
+        return sb.from('vendor_funnel_access').upsert(funnelRows);
+      });
+    }).then(function(res){
+      if(res.error) throw res.error;
+      var before = v.comps;
+      v.comps = comps;
+      return logComponentChanges(v.key, before, comps);
     });
   }
 
@@ -1099,57 +1164,92 @@
     accessList.innerHTML = '';
     if(!vendors.length) accessList.appendChild(el('div', 'access-msg', 'No vendor accounts yet.'));
     vendors.forEach(function(v){
-      var dataset = VENDOR_DATASET[v.key];
-      var hasData = !!dataset;
+      var dataset = datasetFor(v.key);
+      var isComp = dataset === 'vontron';
       var card = el('div', 'access-vendor');
       var head = el('div', 'access-vendor-head');
       var who = el('div');
       who.appendChild(el('strong', null, v.name));
       who.appendChild(el('div', 'access-logins', v.emails.length ? v.emails.join(', ') : 'No logins linked'));
       head.appendChild(who);
-      head.appendChild(el('span', 'badge status ' + (hasData ? 'st-good' : 'st-none'),
-        !hasData ? 'No data on portal yet' : dataset === 'vontron' && v.key !== 'vontron' ? 'Data on portal · Own components' : DATASETS[dataset].status));
+      var badge = el('span');
+      function setBadge(){
+        var none = isComp && !v.comps.length;
+        badge.className = 'badge status ' + (none ? 'st-none' : 'st-good');
+        badge.textContent = !isComp ? DATASETS[dataset].status
+          : none ? 'No components assigned' : v.comps.length + ' of ' + V3_COMPONENTS.length + ' components';
+      }
+      setBadge();
+      head.appendChild(badge);
       card.appendChild(head);
 
+      // Tables; a component vendor with nothing saved yet starts with all four ticked
+      card.appendChild(el('div', 'access-section', 'Tables'));
       var tabsRow = el('div', 'access-tabs');
-      // A vendor with no data yet has no tables to choose from
-      var boxes = (hasData ? DATASETS[dataset].tabs : []).map(function(t){
+      var tabs = v.tabs || (isComp ? DATASETS[dataset].tabs : []);
+      var boxes = DATASETS[dataset].tabs.map(function(t){
         var label = el('label');
-        var box = el('input'); box.type = 'checkbox'; box.value = t; box.checked = v.tabs.indexOf(t) >= 0;
+        var box = el('input'); box.type = 'checkbox'; box.value = t; box.checked = tabs.indexOf(t) >= 0;
         label.appendChild(box); label.appendChild(document.createTextNode(TAB_LABELS[t]));
         tabsRow.appendChild(label);
         return box;
       });
-      if(hasData) card.appendChild(tabsRow);
+      card.appendChild(tabsRow);
+
+      var compBoxes = [];
+      if(isComp){
+        var compHead = el('div', 'access-section', 'Components ');
+        var allBtn = el('button', 'link-btn', 'All'), noneBtn = el('button', 'link-btn', 'None');
+        allBtn.type = noneBtn.type = 'button';
+        compHead.appendChild(allBtn); compHead.appendChild(document.createTextNode(' · ')); compHead.appendChild(noneBtn);
+        card.appendChild(compHead);
+        var compRow = el('div', 'access-tabs');
+        compBoxes = V3_COMPONENTS.map(function(c){
+          var label = el('label');
+          var box = el('input'); box.type = 'checkbox'; box.value = c[0]; box.checked = v.comps.indexOf(c[0]) >= 0;
+          label.appendChild(box); label.appendChild(document.createTextNode(c[1]));
+          compRow.appendChild(label);
+          return box;
+        });
+        card.appendChild(compRow);
+        allBtn.addEventListener('click', function(){ compBoxes.forEach(function(b){ b.checked = true; }); });
+        noneBtn.addEventListener('click', function(){ compBoxes.forEach(function(b){ b.checked = false; }); });
+      }
 
       var actions = el('div', 'access-actions');
       var saveBtn = el('button', 'btn-ghost', 'Save');
       var previewBtn = el('button', 'btn-ghost', 'Preview as ' + v.name);
-      var msg = el('span', 'access-msg', hasData ? '' : 'Vendor can’t sign in until their data is added to the portal.');
-      previewBtn.disabled = saveBtn.disabled = !hasData;
+      var msg = el('span', 'access-msg', isComp && !v.comps.length ? 'Can’t sign in until at least one component is assigned and saved.' : '');
       actions.appendChild(saveBtn); actions.appendChild(previewBtn); actions.appendChild(msg);
       card.appendChild(actions);
-      function checked(){ return boxes.filter(function(b){ return b.checked; }).map(function(b){ return b.value; }); }
+      function checked(list){ return list.filter(function(b){ return b.checked; }).map(function(b){ return b.value; }); }
 
       saveBtn.addEventListener('click', function(){
         busy(saveBtn, 'Saving…'); msg.textContent = '';
-        sb.from('vendor_access').upsert({ vendor_name: v.key, tabs: checked() }).then(function(res){
+        sb.from('vendor_access').upsert({ vendor_name: v.key, tabs: checked(boxes) }).then(function(res){
           if(res.error) throw res.error;
-          v.tabs = checked();
+          v.tabs = checked(boxes);
+          if(!isComp) return;
+          return saveComponents(v, checked(compBoxes)).then(function(){
+            setBadge();
+            return loadVendorLabels().then(fillVendorSel);
+          });
+        }).then(function(){
           msg.textContent = 'Saved. Applies at the vendor’s next sign-in.';
         }).catch(function(err){ msg.textContent = 'Could not save: ' + ((err && err.message) || err); })
           .then(function(){ busy(saveBtn, null); });
       });
       // Preview uses the boxes as ticked now, saved or not
       previewBtn.addEventListener('click', function(){
+        var access = { comps: checked(compBoxes), funnels: {} };
+        access.comps.forEach(function(c){ access.funnels[c] = V3_FUNNELS; });
+        if(isComp && !access.comps.length){ msg.textContent = 'Tick at least one component to preview.'; return; }
         busy(previewBtn, 'Loading…');
-        loadComponentAccess('vendor', v.key).then(function(access){
-          previewVendor = { key: v.key, name: VENDOR_LABELS[v.key] || v.name, dataset: dataset };
-          compAccess = access;
+        (!isComp || usesPilot(v.key, access) ? Promise.resolve() : loadComponents()).then(function(){
+          previewVendor = { key: v.key, name: v.name, dataset: dataset };
+          if(isComp) compAccess = access;
           v3Comp = null;
-          return pilotAllowed() ? null : loadComponents();
-        }).then(function(){
-          viewTabs = checked();
+          viewTabs = checked(boxes);
           accessDialog.close();
           showDataset(dataset);
         }).catch(function(err){ msg.textContent = (err && err.message) || String(err); })
@@ -1219,7 +1319,7 @@
   // Staff Vendor dropdown: Vontron / debit-note vendors are datasets; Lexcru, IOTFY and Gadson show the
   // component view limited to the components granted to them (vendor_component_access)
   function showVendor(value){
-    var dataset = VENDOR_DATASET[value] || value;
+    var dataset = datasetFor(value);
     selVendor = dataset === 'vontron' && value !== 'vontron' ? value : null;
     v3Comp = null;
     var access = selVendor
@@ -2117,7 +2217,7 @@
         return '<option value="' + c[0] + '">' + c[1] + '</option>';
       }).join('') : vontronControls.comp;
       if(v3Comp && compAccess.comps.indexOf(v3Comp) < 0) v3Comp = null;
-      if(!v3Comp && !pilotAllowed() && comps.length) v3Comp = comps[0][0];
+      if(!v3Comp && comps.length && (!pilotAllowed() || compAccess.comps.indexOf('ro_membrane') < 0)) v3Comp = comps[0][0];
       compSel.value = v3Comp || 'ro_membrane';
       return;
     }
