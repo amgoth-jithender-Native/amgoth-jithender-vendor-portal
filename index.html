@@ -443,6 +443,9 @@
       <label for="vendorSel">Vendor</label>
       <select id="vendorSel" class="pill-select">
         <option value="vontron">Vontron</option>
+        <option value="lexcru">Lexcru</option>
+        <option value="iotfy">IOTFY</option>
+        <option value="gadson">Gadson</option>
         <option value="ronch">Ronch · Warranty debit note</option>
         <option value="amber">Amber · Warranty debit note</option>
       </select>
@@ -766,6 +769,7 @@
   var viewTabs = ALL_TABS;   // tables the current viewer may open (vendor_access.tabs for vendors)
   var previewVendor = null;  // admin's "view as vendor" preview: { key, name, dataset }
   var myVendor = null;       // signed-in vendor's key, null for staff
+  var selVendor = null;      // component vendor staff picked in the Vendor dropdown (Lexcru etc.), null = Vontron / all
   // Read the reset-email link's URL before the client consumes it
   var linkParams = new URLSearchParams(window.location.hash.slice(1));
   var cameFromRecovery = linkParams.get('type') === 'recovery';
@@ -900,9 +904,11 @@
         }
         if(profile.role !== 'vendor'){
           viewTabs = ALL_TABS;
-          currentDataset = document.getElementById('vendorSel').value;
+          document.getElementById('vendorSel').value = 'vontron';
+          currentDataset = 'vontron';
         }
         previewVendor = null;
+        selVendor = null;
         loginError.hidden = true;
         loginScreen.hidden = true;
         appEl.hidden = false;
@@ -1187,9 +1193,7 @@
   document.getElementById('previewExit').addEventListener('click', function(){
     previewVendor = null;
     viewTabs = ALL_TABS;
-    if(staffAccess) compAccess = staffAccess;
-    v3Comp = null;
-    showDataset(document.getElementById('vendorSel').value);
+    showVendor(document.getElementById('vendorSel').value);
   });
 
   // ---------- Datasets ----------
@@ -1212,7 +1216,21 @@
       document.getElementById('debitBanner').textContent = err.message;
     }).then(applyRoleViews);
   }
-  document.getElementById('vendorSel').addEventListener('change', function(){ showDataset(this.value); });
+  // Staff Vendor dropdown: Vontron / debit-note vendors are datasets; Lexcru, IOTFY and Gadson show the
+  // component view limited to the components granted to them (vendor_component_access)
+  function showVendor(value){
+    var dataset = VENDOR_DATASET[value] || value;
+    selVendor = dataset === 'vontron' && value !== 'vontron' ? value : null;
+    v3Comp = null;
+    var access = selVendor
+      ? loadComponentAccess('vendor', selVendor).then(function(a){ return loadComponents().then(function(){ return a; }); })
+      : Promise.resolve(staffAccess);
+    return access.then(function(a){
+      if(a) compAccess = a;
+      return showDataset(dataset);
+    }, function(err){ document.getElementById('scopeBanner').textContent = (err && err.message) || String(err); });
+  }
+  document.getElementById('vendorSel').addEventListener('change', function(){ showVendor(this.value); });
 
   var vontronFooter = document.getElementById('pageFooter').textContent;
   function applyDataset(){
@@ -2147,7 +2165,7 @@
   // Vendors see rates only, and states rather than cities, as on the RO Membrane view.
   var v3Comp = null;   // component on screen; null = RO Membrane (Vontron pilot data)
   // Vendor whose view is on screen: the signed-in vendor, the previewed one, or null for staff
-  function viewerVendor(){ return previewVendor ? previewVendor.key : currentRole === 'vendor' ? myVendor : null; }
+  function viewerVendor(){ return previewVendor ? previewVendor.key : currentRole === 'vendor' ? myVendor : selVendor; }
   // Only staff and Vontron see the Vontron RO Membrane pilot data; others get RO Membrane from component-data.js
   function pilotAllowed(){ var k = viewerVendor(); return !k || k === 'vontron'; }
   function viewerName(){ var k = viewerVendor() || 'vontron'; return VENDOR_LABELS[k] || k; }
