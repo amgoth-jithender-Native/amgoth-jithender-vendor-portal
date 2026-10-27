@@ -744,7 +744,10 @@
   var SUPABASE_KEY = "PASTE_PUBLISHABLE_KEY_HERE"; // Project Settings -> API Keys -> publishable (anon) key
   // Vendors whose data this page carries: vendor_name (lower-cased) -> dataset.
   // 'siddharth' and 'keshav' are the vendor_names of the Ronch and Amber logins (same as their debit-note pages).
-  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch', amber:'amber', keshav:'amber' };
+  // Lexcru, IOTFY and Gadson share Vontron's component view, limited to their own components (008_vendor_components.sql).
+  var VENDOR_DATASET = { vontron:'vontron', ronch:'ronch', siddharth:'ronch', amber:'amber', keshav:'amber',
+    lexcru:'vontron', iotfy:'vontron', gadson:'vontron' };
+  var VENDOR_LABELS = { vontron:'Vontron', lexcru:'Lexcru', iotfy:'IOTFY', gadson:'Gadson' };
   var DEBIT_TABS = ['r_summary','r_components','r_cohort','r_sku','r_rows'];
   var DATASETS = {
     vontron: { kind:'funnel', chip:'Vontron · RO Membrane', status:'Data on portal · RO Membrane', tabs:['cohort','geo','tds','rows'] },
@@ -762,6 +765,7 @@
   var currentEmail = null;
   var viewTabs = ALL_TABS;   // tables the current viewer may open (vendor_access.tabs for vendors)
   var previewVendor = null;  // admin's "view as vendor" preview: { key, name, dataset }
+  var myVendor = null;       // signed-in vendor's key, null for staff
   // Read the reset-email link's URL before the client consumes it
   var linkParams = new URLSearchParams(window.location.hash.slice(1));
   var cameFromRecovery = linkParams.get('type') === 'recovery';
@@ -846,13 +850,13 @@
   // vendor_component_access / vendor_funnel_access grant (006/007_*.sql). Missing tables mean none.
   var V3_FUNNELS = ['F_TDS_IN', 'F_TDS_OUT', 'F_WATER'];
   var compAccess = { comps: [], funnels: {} };
-  function loadComponentAccess(profile){
-    if(profile.role !== 'vendor'){
+  var staffAccess = null;    // staff's own access, restored when a vendor preview ends
+  function loadComponentAccess(role, vendor){
+    if(role !== 'vendor'){
       var all = { comps: V3_COMPONENTS.map(function(c){ return c[0]; }), funnels: {} };
       all.comps.forEach(function(c){ all.funnels[c] = V3_FUNNELS; });
       return Promise.resolve(all);
     }
-    var vendor = vendorKey(profile.vendor_name);
     return Promise.all([
       sb.from('vendor_component_access').select('component_id').eq('vendor_id', vendor).eq('active', true),
       sb.from('vendor_funnel_access').select('component_id, funnel_code').eq('vendor_id', vendor).eq('active', true)
@@ -881,6 +885,16 @@
         });
       })
       .then(function(problem){
+        if(problem) return problem;
+        myVendor = profile.role === 'vendor' ? vendorKey(profile.vendor_name) : null;
+        return loadComponentAccess(profile.role, myVendor).then(function(access){
+          compAccess = staffAccess = access;
+          if(!myVendor || myVendor === 'vontron') return null; // currentRole isn't set yet, so not pilotAllowed()
+          if(!access.comps.length) return 'No components have been assigned to your account yet. Ask an admin.';
+          return loadComponents().then(function(){ return null; });
+        });
+      })
+      .then(function(problem){
         if(problem){
           return sb.auth.signOut().then(function(){ showLogin(); showLoginError(problem); });
         }
@@ -901,10 +915,7 @@
         document.getElementById('accessBtn').hidden = currentRole !== 'admin';
         document.getElementById('vendorControl').hidden = currentRole === 'vendor';
         v3Comp = null;
-        return loadComponentAccess(profile).then(function(access){
-          compAccess = access;
-          return loadModeration();
-        }).then(function(){
+        return loadModeration().then(function(){
           initDashboard();
           return loadDataset(currentDataset);
         }).then(function(){
@@ -1091,7 +1102,7 @@
       who.appendChild(el('div', 'access-logins', v.emails.length ? v.emails.join(', ') : 'No logins linked'));
       head.appendChild(who);
       head.appendChild(el('span', 'badge status ' + (hasData ? 'st-good' : 'st-none'),
-        hasData ? DATASETS[dataset].status : 'No data on portal yet'));
+        !hasData ? 'No data on portal yet' : dataset === 'vontron' && v.key !== 'vontron' ? 'Data on portal · Own components' : DATASETS[dataset].status));
       card.appendChild(head);
 
       var tabsRow = el('div', 'access-tabs');
@@ -1125,10 +1136,18 @@
       });
       // Preview uses the boxes as ticked now, saved or not
       previewBtn.addEventListener('click', function(){
-        previewVendor = { key: v.key, name: v.name, dataset: dataset };
-        viewTabs = checked();
-        accessDialog.close();
-        showDataset(dataset);
+        busy(previewBtn, 'Loading…');
+        loadComponentAccess('vendor', v.key).then(function(access){
+          previewVendor = { key: v.key, name: VENDOR_LABELS[v.key] || v.name, dataset: dataset };
+          compAccess = access;
+          v3Comp = null;
+          return pilotAllowed() ? null : loadComponents();
+        }).then(function(){
+          viewTabs = checked();
+          accessDialog.close();
+          showDataset(dataset);
+        }).catch(function(err){ msg.textContent = (err && err.message) || String(err); })
+          .then(function(){ busy(previewBtn, null); });
       });
       accessList.appendChild(card);
     });
@@ -1168,6 +1187,8 @@
   document.getElementById('previewExit').addEventListener('click', function(){
     previewVendor = null;
     viewTabs = ALL_TABS;
+    if(staffAccess) compAccess = staffAccess;
+    v3Comp = null;
     showDataset(document.getElementById('vendorSel').value);
   });
 
@@ -2072,12 +2093,13 @@
     document.getElementById('periodControl').hidden = !debit || window.MW_DEBIT[currentDataset].periods.length < 2;
     if(!debit){
       typeSel.innerHTML = vontronControls.type;
-      // RO Membrane plus every other component this login has been granted
-      var comps = V3_COMPONENTS.filter(function(c){ return c[0] === 'ro_membrane' || compAccess.comps.indexOf(c[0]) >= 0; });
-      compSel.innerHTML = comps.length > 1 ? comps.map(function(c){
+      // Only the components this login (or previewed vendor) has been granted
+      var comps = V3_COMPONENTS.filter(function(c){ return compAccess.comps.indexOf(c[0]) >= 0; });
+      compSel.innerHTML = comps.length ? comps.map(function(c){
         return '<option value="' + c[0] + '">' + c[1] + '</option>';
       }).join('') : vontronControls.comp;
       if(v3Comp && compAccess.comps.indexOf(v3Comp) < 0) v3Comp = null;
+      if(!v3Comp && !pilotAllowed() && comps.length) v3Comp = comps[0][0];
       compSel.value = v3Comp || 'ro_membrane';
       return;
     }
@@ -2107,7 +2129,7 @@
   });
   compSel.addEventListener('change', function(){
     if(!isDebitView()){
-      v3Comp = compSel.value === 'ro_membrane' ? null : compSel.value;
+      v3Comp = compSel.value === 'ro_membrane' && pilotAllowed() ? null : compSel.value;
       if(!v3Comp) return renderAll();
       v3Case = { barcode: '', mfg: '', repeat: '' };
       document.getElementById('v3Barcode').value = '';
@@ -2123,7 +2145,12 @@
   // ---------- Components other than RO Membrane (Vontron view) ----------
   // Same four tabs, filled from component-data.js (all manufacturers, all-time install base).
   // Vendors see rates only, and states rather than cities, as on the RO Membrane view.
-  var v3Comp = null;   // component on screen; null = RO Membrane
+  var v3Comp = null;   // component on screen; null = RO Membrane (Vontron pilot data)
+  // Vendor whose view is on screen: the signed-in vendor, the previewed one, or null for staff
+  function viewerVendor(){ return previewVendor ? previewVendor.key : currentRole === 'vendor' ? myVendor : null; }
+  // Only staff and Vontron see the Vontron RO Membrane pilot data; others get RO Membrane from component-data.js
+  function pilotAllowed(){ var k = viewerVendor(); return !k || k === 'vontron'; }
+  function viewerName(){ var k = viewerVendor() || 'vontron'; return VENDOR_LABELS[k] || k; }
   var v3Case = { barcode: '', mfg: '', repeat: '' };
   var V3_BUCKETS = ['0-30', '31-90', '91-180', '181-240', '241-365', '>365'];
   var V3_BUCKET_LABELS = ['0–30 days', '31–90 days', '91–180 days', '181–240 days', '241–365 days', '>365 days'];
@@ -2176,13 +2203,15 @@
   function renderV3(){
     var data = v3Data();
     document.body.classList.toggle('v3-comp', !!data);
-    if(currentDataset === 'vontron') document.querySelector('.vendor-chip').lastChild.textContent = data ? 'Vontron · ' + v3Label() : DATASETS.vontron.chip;
+    if(currentDataset === 'vontron') document.querySelector('.vendor-chip').lastChild.textContent = data ? viewerName() + ' · ' + v3Label() : DATASETS.vontron.chip;
     if(!data) return;
+    if(!pilotAllowed()) document.getElementById('pageFooter').textContent = 'Membrane Watch · ' + viewerName() +
+      ' component defect analysis · Urban Company — all manufacturers, all-time install base. Component grouping is provisional.';
     var vendorView = pctOnly();
     var m = data.meta;
     document.getElementById('scopeBanner').textContent = v3Label() + ' — all manufacturers, all-time install base (data pulled ' + m.pulled_at + ')' +
       (vendorView ? '. ' : ': ' + fmtInt(m.total_installs) + ' installs, ' + fmtInt(m.total_defect_events) + ' replacements. ') +
-      'Broader scope than the RO Membrane view, which covers Ronch- and Amber-assembled machines only.';
+      (pilotAllowed() ? 'Broader scope than the RO Membrane view, which covers Ronch- and Amber-assembled machines only.' : '');
 
     // Install Cohort tab
     var stats = document.getElementById('v3Stats'); stats.innerHTML = '';
